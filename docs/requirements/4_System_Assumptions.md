@@ -1,0 +1,7 @@
+- Each transaction has a unique identifier.
+- Events are immutable after creation.
+- Kafka guarantees ordering within a partition.
+- Redis is used only for temporary reconciliation state.
+- PostgreSQL is the source of truth.
+- Workers process events independently.
+- The MVP is deployed on a single VPS.

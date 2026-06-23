@@ -1,0 +1,7 @@
+- Each transaction has a unique Transaction ID.
+- Events contain a unique Event ID.
+- Events are immutable after creation.
+- One payment belongs to one transaction.
+- The system processes events at least once.
+- The initial deployment targets a single VPS.
+- Kafka guarantees ordered delivery within a partition.
