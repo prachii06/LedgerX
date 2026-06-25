@@ -8,7 +8,7 @@ The system will be developed in small milestones, where each milestone produces 
 
 # 1. Implementation Strategy
 
-## Approach
+## Approach 
 
 LedgerX will follow **incremental milestone-based development**.
 
