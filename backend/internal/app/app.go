@@ -32,8 +32,8 @@ log.Info("Database connected successfully")
 
 	log.Info("db connected successfully")
 
-	router := server.New(cfg.ServerPort)
-
+	router := server.New(cfg.ServerPort, db)
+	
 	err = router.Run(":" + cfg.ServerPort)
 	if err != nil {
 		log.Error("Failed to start server", "error", err)
