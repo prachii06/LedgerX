@@ -7,32 +7,40 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func Health(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"status": "healthy",
-	})
+type HealthHandler struct {
+	DB *pgxpool.Pool
 }
 
-func Live(c *gin.Context) {
+func NewHealthHandler(db *pgxpool.Pool) *HealthHandler {
+	return &HealthHandler{
+		DB: db,
+	}
+}
+
+func (h *HealthHandler) Live(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"status": "alive",
 	})
 }
 
-func Ready(db *pgxpool.Pool) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (h *HealthHandler) Health(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status": "healthy",
+	})
+}
 
-		err := db.Ping(context.Background())
+func (h *HealthHandler) Ready(c *gin.Context) {
 
-		if err != nil {
-			c.JSON(503, gin.H{
-				"status": "database unavailable",
-			})
-			return
-		}
+	err := h.DB.Ping(context.Background())
 
-		c.JSON(200, gin.H{
-			"status": "ready",
+	if err != nil {
+		c.JSON(503, gin.H{
+			"status": "database unavailable",
 		})
+		return
 	}
+
+	c.JSON(200, gin.H{
+		"status": "ready",
+	})
 }
