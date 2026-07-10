@@ -3,6 +3,7 @@ package config
 import (
 	"os"
     "github.com/joho/godotenv"
+	"fmt"
 )
    
 type Config struct {
@@ -31,4 +32,16 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+
+func (c *Config) DatabaseDSN() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s",
+		c.DBUser,
+		c.DBPassword,
+		c.DBHost,
+		c.DBPort,
+		c.DBName,
+	)
 }

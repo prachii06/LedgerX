@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:17
+
+    container_name: postgres
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 10100
+      POSTGRES_DB: ledgerx
+
+
+    ports:
+      - "5433:5432"
+
+
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+
+volumes:
+  postgres_data:
