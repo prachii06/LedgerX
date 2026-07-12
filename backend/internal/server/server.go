@@ -15,7 +15,7 @@ func New(port string, db *pgxpool.Pool) *gin.Engine{
 	router.GET("/health", healthHandler.Health)
 	router.GET("/ready", healthHandler.Ready)
 	router.GET("/live", healthHandler.Live)
-
+	
 	fmt.Printf("server running on port %s\n",port)
 
 	return router
