@@ -37,8 +37,10 @@ func Run() {
 	log.Info("Database connected successfully")
 
 	
+	
 	// Dependency Injection
 	
+
 	// Repository
 	transactionRepo := repository.NewTransactionRepository(db)
 
@@ -48,9 +50,12 @@ func Run() {
 	// Generators
 	transactionGenerator := generator.NewTransactionGenerator(transactionService)
 
+	// Application Services
+	simulationService := services.NewSimulationService(transactionGenerator)
+
 	// Handlers
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
-	simulationHandler := handlers.NewSimulationHandler(transactionGenerator)
+	simulationHandler := handlers.NewSimulationHandler(simulationService)
 
 	// Server
 	router := server.New(
@@ -60,7 +65,7 @@ func Run() {
 		simulationHandler,
 	)
 
-	// Start server
+	// Start HTTP Server
 	log.Info(
 		"HTTP server started",
 		"port", cfg.ServerPort,

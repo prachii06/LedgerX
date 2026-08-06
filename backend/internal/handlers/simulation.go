@@ -3,20 +3,20 @@ package handlers
 import (
 	"net/http"
 	"github.com/gin-gonic/gin"
-	"github.com/prachii06/LedgerX/internal/generator"
 	"github.com/prachii06/LedgerX/internal/models"
+	"github.com/prachii06/LedgerX/internal/services"
 )
 
 type SimulationHandler struct {
-	generator *generator.TransactionGenerator
+	service *services.SimulationService
 }
 
 func NewSimulationHandler(
-	generator *generator.TransactionGenerator,
+	service *services.SimulationService,
 ) *SimulationHandler {
 
 	return &SimulationHandler{
-		generator: generator,
+		service: service,
 	}
 }
 
@@ -31,8 +31,7 @@ func (h *SimulationHandler) Generate(c *gin.Context) {
 		return
 	}
 
-	err := h.generator.Generate(request.Count)
-	if err != nil {
+	if err := h.service.Generate(request.Count); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
