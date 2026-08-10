@@ -9,6 +9,7 @@ import (
 	"github.com/prachii06/LedgerX/internal/repository"
 	"github.com/prachii06/LedgerX/internal/server"
 	"github.com/prachii06/LedgerX/internal/services"
+	
 )
 
 func Run() {
@@ -50,12 +51,16 @@ func Run() {
 	// Generators
 	transactionGenerator := generator.NewTransactionGenerator(transactionService)
 
+	
+
 	// Application Services
-	simulationService := services.NewSimulationService(transactionGenerator)
+	simulationService := services.NewSimulationService(transactionGenerator,eventGenerator)
 
 	// Handlers
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 	simulationHandler := handlers.NewSimulationHandler(simulationService)
+
+	//
 
 	// Server
 	router := server.New(

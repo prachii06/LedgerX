@@ -6,6 +6,7 @@ type Generator interface {
 
 type SimulationService struct {
 	generator Generator
+	
 }
 
 func NewSimulationService(
