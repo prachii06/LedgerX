@@ -3,17 +3,22 @@ package generator
 import (
 	"context"
 	"time"
+
 	"github.com/google/uuid"
+
 	"github.com/prachii06/LedgerX/internal/models"
-	"github.com/prachii06/LedgerX/internal/services"
 )
 
+type EventCreator interface {
+	CreateEvent(ctx context.Context, event *models.Event) error
+}
+
 type EventGenerator struct {
-	service *services.EventService
+	service EventCreator
 }
 
 func NewEventGenerator(
-	service *services.EventService,
+	service EventCreator,
 ) *EventGenerator {
 	return &EventGenerator{
 		service: service,
@@ -24,6 +29,7 @@ func (g *EventGenerator) GenerateForTransaction(
 	ctx context.Context,
 	transactionID string,
 ) error {
+
 	events := []models.Event{
 		{
 			ID:            uuid.New().String(),

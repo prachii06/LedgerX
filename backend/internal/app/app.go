@@ -9,7 +9,6 @@ import (
 	"github.com/prachii06/LedgerX/internal/repository"
 	"github.com/prachii06/LedgerX/internal/server"
 	"github.com/prachii06/LedgerX/internal/services"
-	
 )
 
 func Run() {
@@ -37,30 +36,31 @@ func Run() {
 
 	log.Info("Database connected successfully")
 
-	
-	
+	// ----------------------------
 	// Dependency Injection
-	
+	// ----------------------------
 
-	// Repository
+	// Repositories
 	transactionRepo := repository.NewTransactionRepository(db)
+	eventRepo := repository.NewEventRepository(db)
 
 	// Services
 	transactionService := services.NewTransactionService(transactionRepo)
+	eventService := services.NewEventService(eventRepo)
 
 	// Generators
 	transactionGenerator := generator.NewTransactionGenerator(transactionService)
-
-	
+	eventGenerator := generator.NewEventGenerator(eventService)
 
 	// Application Services
-	simulationService := services.NewSimulationService(transactionGenerator,eventGenerator)
+	simulationService := services.NewSimulationService(
+		transactionGenerator,
+		eventGenerator,
+	)
 
 	// Handlers
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 	simulationHandler := handlers.NewSimulationHandler(simulationService)
-
-	//
 
 	// Server
 	router := server.New(

@@ -4,35 +4,55 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"time"
 	"github.com/prachii06/LedgerX/internal/models"
-	"github.com/prachii06/LedgerX/internal/services"
 )
 
-type TransactionGenerator struct {
-	service *services.TransactionService
+type TransactionCreator interface {
+	CreateTransaction(
+		ctx context.Context,
+		transaction *models.Transaction,
+	) error
 }
 
-func NewTransactionGenerator(service *services.TransactionService) *TransactionGenerator {
+type TransactionGenerator struct {
+	service TransactionCreator
+}
+
+func NewTransactionGenerator(
+	service TransactionCreator,
+) *TransactionGenerator {
 	return &TransactionGenerator{
 		service: service,
 	}
 }
 
-func (g *TransactionGenerator) Generate(count int) error {
+func (g *TransactionGenerator) Generate(count int) ([]string, error) {
+
+	transactionIDs := make([]string, 0, count)
 
 	for i := 1; i <= count; i++ {
 
 		transaction := &models.Transaction{
-			ExternalID: fmt.Sprintf("SIM-%06d", i),
+			ExternalID: fmt.Sprintf("SIM-%d-%06d", time.Now().UnixNano(), i),
 			Amount:     float64(rand.Intn(9900) + 100),
 			Currency:   "INR",
 		}
 
-		err := g.service.CreateTransaction(context.Background(), transaction)
+		err := g.service.CreateTransaction(
+			context.Background(),
+			transaction,
+		)
+
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		transactionIDs = append(
+			transactionIDs,
+			transaction.ID,
+		)
 	}
 
-	return nil
+	return transactionIDs, nil
 }

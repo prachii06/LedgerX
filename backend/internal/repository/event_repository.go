@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/prachii06/LedgerX/internal/models"
 )
 
@@ -20,5 +22,29 @@ func (r *EventRepository) Create(
 	ctx context.Context,
 	event *models.Event,
 ) error {
-	return nil
+
+	query := `
+		INSERT INTO transaction_events (
+			id,
+			transaction_id,
+			source,
+			event_type,
+			payload,
+			received_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`
+
+	_, err := r.db.Exec(
+		ctx,
+		query,
+		event.ID,
+		event.TransactionID,
+		event.Source,
+		event.EventType,
+		event.Payload,
+		event.ReceivedAt,
+	)
+
+	return err
 }
