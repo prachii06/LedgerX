@@ -1,20 +1,22 @@
 package services
 
-import(
+import (
+	"context"
+	"fmt"
 
-"context"
-"fmt"
-
+	"github.com/prachii06/LedgerX/internal/models"
 )
 
 type TransactionGenerator interface {
-	Generate(count int) ([]string, error)
+	Generate(count int) ([]models.GeneratedTransaction, error)
 }
 
 type EventGenerator interface {
 	GenerateForTransaction(
 		ctx context.Context,
 		transactionID string,
+		amount float64,
+		currency string,
 	) error
 }
 
@@ -36,20 +38,22 @@ func NewSimulationService(
 
 func (s *SimulationService) Generate(count int) error {
 
-	transactionIDs, err := s.transactionGenerator.Generate(count)
+	transactions, err := s.transactionGenerator.Generate(count)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("TRANSACTION IDS:",transactionIDs)
+	fmt.Println("TRANSACTIONS:", transactions)
 
-	for _, transactionID := range transactionIDs {
+	for _, transaction := range transactions {
 
-		fmt.Println("GENERATING EVENTS FOR:", transactionID)
+		fmt.Println("GENERATING EVENTS FOR:", transaction.ID)
 
 		err := s.eventGenerator.GenerateForTransaction(
 			context.Background(),
-			transactionID,
+			transaction.ID,
+			transaction.Amount,
+			transaction.Currency,
 		)
 
 		if err != nil {

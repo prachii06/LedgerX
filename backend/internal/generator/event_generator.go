@@ -28,6 +28,8 @@ func NewEventGenerator(
 func (g *EventGenerator) GenerateForTransaction(
 	ctx context.Context,
 	transactionID string,
+	amount float64,
+	currency string,
 ) error {
 
 	events := []models.Event{
@@ -36,24 +38,38 @@ func (g *EventGenerator) GenerateForTransaction(
 			TransactionID: transactionID,
 			Source:        models.SourceOrderService,
 			EventType:     models.EventTransactionCreated,
-			Payload:       map[string]interface{}{},
-			ReceivedAt:    time.Now(),
+			Payload: map[string]interface{}{
+				"transaction_id": transactionID,
+				"amount":         amount,
+				"currency":       currency,
+			},
+			ReceivedAt: time.Now(),
 		},
 		{
 			ID:            uuid.New().String(),
 			TransactionID: transactionID,
 			Source:        models.SourcePaymentGateway,
 			EventType:     models.EventPaymentReceived,
-			Payload:       map[string]interface{}{},
-			ReceivedAt:    time.Now(),
+			Payload: map[string]interface{}{
+				"transaction_id": transactionID,
+				"amount":         amount,
+				"currency":       currency,
+				"payment_status": "SUCCESS",
+			},
+			ReceivedAt: time.Now(),
 		},
 		{
 			ID:            uuid.New().String(),
 			TransactionID: transactionID,
 			Source:        models.SourceAccountingService,
 			EventType:     models.EventAccountingBooked,
-			Payload:       map[string]interface{}{},
-			ReceivedAt:    time.Now(),
+			Payload: map[string]interface{}{
+				"transaction_id": transactionID,
+				"amount":         amount,
+				"currency":       currency,
+				"ledger_status":  "BOOKED",
+			},
+			ReceivedAt: time.Now(),
 		},
 	}
 

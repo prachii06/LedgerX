@@ -27,9 +27,9 @@ func NewTransactionGenerator(
 	}
 }
 
-func (g *TransactionGenerator) Generate(count int) ([]string, error) {
+func (g *TransactionGenerator) Generate(count int) ([]models.GeneratedTransaction, error) {
 
-	transactionIDs := make([]string, 0, count)
+	transactions := make([]models.GeneratedTransaction, 0, count)
 
 	for i := 1; i <= count; i++ {
 
@@ -48,11 +48,15 @@ func (g *TransactionGenerator) Generate(count int) ([]string, error) {
 			return nil, err
 		}
 
-		transactionIDs = append(
-			transactionIDs,
-			transaction.ID,
+		transactions = append(
+			transactions,
+			models.GeneratedTransaction{
+				ID:       transaction.ID,
+				Amount:   transaction.Amount,
+				Currency: transaction.Currency,
+			},
 		)
 	}
 
-	return transactionIDs, nil
+	return transactions, nil
 }
