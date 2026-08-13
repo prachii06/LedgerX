@@ -76,9 +76,13 @@ func (g *EventGenerator) GenerateForTransaction(
 		},
 	}
 
-	for _, event := range events {
+	for i, event := range events {
 		if err := g.service.CreateEvent(ctx, &event); err != nil {
 			return err
+		}
+
+		if i < len(events)-1 {
+			time.Sleep(1 * time.Second)
 		}
 	}
 
