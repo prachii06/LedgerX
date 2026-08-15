@@ -42,10 +42,12 @@ func Run() {
 
 	// Repositories
 	transactionRepo := repository.NewTransactionRepository(db)
+	reconciliationRepo := repository.NewReconciliationRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 
 	// Services
 	transactionService := services.NewTransactionService(transactionRepo)
+	reconciliationService := services.NewReconciliationService(reconciliationRepo)
 	eventService := services.NewEventService(eventRepo)
 
 	// Generators
@@ -61,6 +63,7 @@ func Run() {
 	// Handlers
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 	simulationHandler := handlers.NewSimulationHandler(simulationService)
+	reconciliationHandler := handlers.NewReconciliationHandler(reconciliationService)
 
 	// Server
 	router := server.New(
@@ -68,6 +71,7 @@ func Run() {
 		db,
 		transactionHandler,
 		simulationHandler,
+		reconciliationHandler,
 	)
 
 	// Start HTTP Server

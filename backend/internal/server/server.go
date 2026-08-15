@@ -8,7 +8,7 @@ import (
 	"github.com/prachii06/LedgerX/internal/handlers"
 )
 
-func New(port string, db *pgxpool.Pool, transactionHandler *handlers.TransactionHandler, simulationHandler *handlers.SimulationHandler) *gin.Engine {
+func New(port string, db *pgxpool.Pool, transactionHandler *handlers.TransactionHandler, simulationHandler *handlers.SimulationHandler,reconciliationHandler *handlers.ReconciliationHandler,) *gin.Engine {
 	router := gin.Default()
 
 	healthHandler := handlers.NewHealthHandler(db)
@@ -18,6 +18,9 @@ func New(port string, db *pgxpool.Pool, transactionHandler *handlers.Transaction
 	router.GET("/live", healthHandler.Live)
 	router.POST("/transactions", transactionHandler.Create)
 	router.POST("/simulate", simulationHandler.Generate)
+	router.GET("/reconcile/:transaction_id", reconciliationHandler.Reconcile)
+
+
 	fmt.Printf("server running on port %s\n", port)
 
 	return router
