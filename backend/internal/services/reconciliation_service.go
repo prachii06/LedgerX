@@ -34,34 +34,50 @@ func (s *ReconciliationService) ReconcileTransaction(
 		return nil, err
 	}
 
-	eventCount := len(events)
+	eventCounts := make(map[string]int)
 
-	switch {
-	case eventCount == 3:
-		return &models.ReconciliationResult{
-			TransactionID: transactionID,
-			Status:        models.ReconciliationMatched,
-			Message:       "All expected events received",
-		}, nil
-
-	case eventCount < 3:
-		return &models.ReconciliationResult{
-			TransactionID: transactionID,
-			Status:        models.ReconciliationMissing,
-			Message: fmt.Sprintf(
-				"Expected 3 events but received %d",
-				eventCount,
-			),
-		}, nil
-
-	default:
-		return &models.ReconciliationResult{
-			TransactionID: transactionID,
-			Status:        models.ReconciliationDuplicate,
-			Message: fmt.Sprintf(
-				"Expected 3 events but received %d",
-				eventCount,
-			),
-		}, nil
+	for _, event := range events {
+		eventCounts[event.EventType]++
 	}
+
+	expectedEvents := []string{
+		models.EventTransactionCreated,
+		models.EventPaymentReceived,
+		models.EventAccountingBooked,
+	}
+
+	// Check for duplicate events.
+	for _, eventType := range expectedEvents {
+		if eventCounts[eventType] > 1 {
+			return &models.ReconciliationResult{
+				TransactionID: transactionID,
+				Status:        models.ReconciliationDuplicate,
+				Message: fmt.Sprintf(
+					"Duplicate event detected: %s",
+					eventType,
+				),
+			}, nil
+		}
+	}
+
+	// Check for missing events.
+	for _, eventType := range expectedEvents {
+		if eventCounts[eventType] == 0 {
+			return &models.ReconciliationResult{
+				TransactionID: transactionID,
+				Status:        models.ReconciliationMissing,
+				Message: fmt.Sprintf(
+					"Missing event: %s",
+					eventType,
+				),
+			}, nil
+		}
+	}
+
+	// All expected events exist exactly once.
+	return &models.ReconciliationResult{
+		TransactionID: transactionID,
+		Status:        models.ReconciliationMatched,
+		Message:       "All expected events received exactly once",
+	}, nil
 }

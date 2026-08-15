@@ -73,3 +73,29 @@ func (r *ReconciliationRepository) GetEventsByTransactionID(
 
 	return events, nil
 }
+
+func (r *ReconciliationRepository) GetTransactionAmount(
+	ctx context.Context,
+	transactionID string,
+) (float64, error) {
+
+	query := `
+		SELECT amount
+		FROM transactions
+		WHERE id = $1
+	`
+
+	var amount float64
+
+	err := r.db.QueryRow(
+		ctx,
+		query,
+		transactionID,
+	).Scan(&amount)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return amount, nil
+}
