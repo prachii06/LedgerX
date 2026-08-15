@@ -3,7 +3,7 @@ package generator
 import (
 	"context"
 	"time"
-
+	"math/rand"
 	"github.com/google/uuid"
 
 	"github.com/prachii06/LedgerX/internal/models"
@@ -77,13 +77,40 @@ func (g *EventGenerator) GenerateForTransaction(
 	}
 
 	for i, event := range events {
-		if err := g.service.CreateEvent(ctx, &event); err != nil {
+	if err := g.service.CreateEvent(ctx, &event); err != nil {
+		return err
+	}
+
+	// Simulate a duplicate event for EventPaymentReceived with a 30% chance
+	if event.EventType == models.EventPaymentReceived {
+	if rand.Float64() < 0.3 {
+		if err := g.generateDuplicateEvent(ctx, event); err != nil {
 			return err
 		}
+	}
+}
 
-		if i < len(events)-1 {
-			time.Sleep(1 * time.Second)
-		}
+	if i < len(events)-1 {
+		time.Sleep(1 * time.Second)
+	}
+}
+
+
+	
+
+	return nil
+}
+
+
+func (g *EventGenerator) generateDuplicateEvent(
+	ctx context.Context,
+	event models.Event,
+) error {
+
+	event.ID = uuid.New().String()
+
+	if err := g.service.CreateEvent(ctx, &event); err != nil {
+		return err
 	}
 
 	return nil
