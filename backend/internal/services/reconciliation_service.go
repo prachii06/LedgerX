@@ -25,6 +25,17 @@ func (s *ReconciliationService) ReconcileTransaction(
 	transactionID string,
 ) (*models.ReconciliationResult, error) {
 
+	// Get the original transaction amount.
+	transactionAmount, err := s.repository.GetTransactionAmount(
+		ctx,
+		transactionID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all events for this transaction.
 	events, err := s.repository.GetEventsByTransactionID(
 		ctx,
 		transactionID,
@@ -74,10 +85,53 @@ func (s *ReconciliationService) ReconcileTransaction(
 		}
 	}
 
-	// All expected events exist exactly once.
+	// Check event amounts against the original transaction amount.
+	for _, event := range events {
+
+		payloadAmount, ok := event.Payload["amount"]
+
+		if !ok {
+			return &models.ReconciliationResult{
+				TransactionID: transactionID,
+				Status:        models.ReconciliationMismatch,
+				Message: fmt.Sprintf(
+					"Amount missing from event: %s",
+					event.EventType,
+				),
+			}, nil
+		}
+
+		amount, ok := payloadAmount.(float64)
+
+		if !ok {
+			return &models.ReconciliationResult{
+				TransactionID: transactionID,
+				Status:        models.ReconciliationMismatch,
+				Message: fmt.Sprintf(
+					"Invalid amount in event: %s",
+					event.EventType,
+				),
+			}, nil
+		}
+
+		if amount != transactionAmount {
+			return &models.ReconciliationResult{
+				TransactionID: transactionID,
+				Status:        models.ReconciliationMismatch,
+				Message: fmt.Sprintf(
+					"Amount mismatch in %s: transaction=%.2f, event=%.2f",
+					event.EventType,
+					transactionAmount,
+					amount,
+				),
+			}, nil
+		}
+	}
+
+	// Everything matches.
 	return &models.ReconciliationResult{
 		TransactionID: transactionID,
 		Status:        models.ReconciliationMatched,
-		Message:       "All expected events received exactly once",
+		Message:       "All events received exactly once and amounts match",
 	}, nil
 }
