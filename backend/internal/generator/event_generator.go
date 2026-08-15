@@ -77,6 +77,13 @@ func (g *EventGenerator) GenerateForTransaction(
 	}
 
 	for i, event := range events {
+		// Simulate a missing accounting event
+	if event.EventType == models.EventAccountingBooked {
+	if rand.Float64() < 0.3 {
+		continue
+	}
+	}
+
 	if err := g.service.CreateEvent(ctx, &event); err != nil {
 		return err
 	}
