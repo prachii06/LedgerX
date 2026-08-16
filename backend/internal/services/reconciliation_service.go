@@ -36,6 +36,16 @@ func (s *ReconciliationService) ReconcileTransaction(
 		return nil, err
 	}
 
+	// Get the original transaction currency.
+	transactionCurrency, err := s.repository.GetTransactionCurrency(
+		ctx,
+		transactionID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
 	// Get all events for this transaction.
 	events, err := s.repository.GetEventsByTransactionID(
 		ctx,
@@ -56,6 +66,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 
 	eventCounts := make(map[string]int)
 	eventAmounts := make(map[string]float64)
+	eventCurrencies := make(map[string]string)
 
 	// Process all events.
 	for _, event := range events {
@@ -96,6 +107,14 @@ func (s *ReconciliationService) ReconcileTransaction(
 				}
 			}
 		}
+
+		// Extract currency from event payload.
+		if payloadCurrency, ok := event.Payload["currency"]; ok {
+
+			if currency, ok := payloadCurrency.(string); ok {
+				eventCurrencies[eventType] = currency
+			}
+		}
 	}
 
 	// Find missing events.
@@ -125,29 +144,63 @@ func (s *ReconciliationService) ReconcileTransaction(
 	// Check duplicates.
 	if len(duplicateEvents) > 0 {
 		return &models.ReconciliationResult{
-			TransactionID:   transactionID,
-			Status:          models.ReconciliationDuplicate,
-			Message:         fmt.Sprintf("Duplicate events detected: %v", duplicateEvents),
-			ExpectedEvents:  expectedEvents,
-			ReceivedEvents:  receivedEvents,
-			DuplicateEvents: duplicateEvents,
-			TransactionAmount: transactionAmount,
-			EventAmounts:    eventAmounts,
+			TransactionID:       transactionID,
+			Status:              models.ReconciliationDuplicate,
+			Message:             fmt.Sprintf(
+				"Duplicate events detected: %v",
+				duplicateEvents,
+			),
+			ExpectedEvents:      expectedEvents,
+			ReceivedEvents:      receivedEvents,
+			DuplicateEvents:     duplicateEvents,
+			TransactionAmount:   transactionAmount,
+			EventAmounts:        eventAmounts,
+			TransactionCurrency: transactionCurrency,
+			EventCurrencies:     eventCurrencies,
 		}, nil
 	}
 
 	// Check missing events.
 	if len(missingEvents) > 0 {
 		return &models.ReconciliationResult{
-			TransactionID:     transactionID,
-			Status:            models.ReconciliationMissing,
-			Message:           fmt.Sprintf("Missing events: %v", missingEvents),
-			ExpectedEvents:    expectedEvents,
-			ReceivedEvents:    receivedEvents,
-			MissingEvents:     missingEvents,
-			TransactionAmount: transactionAmount,
-			EventAmounts:      eventAmounts,
+			TransactionID:       transactionID,
+			Status:              models.ReconciliationMissing,
+			Message:             fmt.Sprintf(
+				"Missing events: %v",
+				missingEvents,
+			),
+			ExpectedEvents:      expectedEvents,
+			ReceivedEvents:      receivedEvents,
+			MissingEvents:       missingEvents,
+			TransactionAmount:   transactionAmount,
+			EventAmounts:        eventAmounts,
+			TransactionCurrency: transactionCurrency,
+			EventCurrencies:     eventCurrencies,
 		}, nil
+	}
+
+	// Check currency mismatches.
+	for eventType, eventCurrency := range eventCurrencies {
+
+		if eventCurrency != transactionCurrency {
+
+			return &models.ReconciliationResult{
+				TransactionID:       transactionID,
+				Status:              models.ReconciliationCurrencyMismatch,
+				Message: fmt.Sprintf(
+					"Currency mismatch in %s: transaction=%s, event=%s",
+					eventType,
+					transactionCurrency,
+					eventCurrency,
+				),
+				ExpectedEvents:      expectedEvents,
+				ReceivedEvents:      receivedEvents,
+				TransactionAmount:   transactionAmount,
+				EventAmounts:        eventAmounts,
+				TransactionCurrency: transactionCurrency,
+				EventCurrencies:     eventCurrencies,
+			}, nil
+		}
 	}
 
 	// Check amount mismatches.
@@ -156,30 +209,34 @@ func (s *ReconciliationService) ReconcileTransaction(
 		if eventAmount != transactionAmount {
 
 			return &models.ReconciliationResult{
-				TransactionID:     transactionID,
-				Status:            models.ReconciliationMismatch,
+				TransactionID:       transactionID,
+				Status:              models.ReconciliationMismatch,
 				Message: fmt.Sprintf(
 					"Amount mismatch in %s: transaction=%.2f, event=%.2f",
 					eventType,
 					transactionAmount,
 					eventAmount,
 				),
-				ExpectedEvents:    expectedEvents,
-				ReceivedEvents:    receivedEvents,
-				TransactionAmount: transactionAmount,
-				EventAmounts:      eventAmounts,
+				ExpectedEvents:      expectedEvents,
+				ReceivedEvents:      receivedEvents,
+				TransactionAmount:   transactionAmount,
+				EventAmounts:        eventAmounts,
+				TransactionCurrency: transactionCurrency,
+				EventCurrencies:     eventCurrencies,
 			}, nil
 		}
 	}
 
 	// Everything matches.
 	return &models.ReconciliationResult{
-		TransactionID:     transactionID,
-		Status:            models.ReconciliationMatched,
-		Message:           "All events received exactly once and amounts match",
-		ExpectedEvents:    expectedEvents,
-		ReceivedEvents:    receivedEvents,
-		TransactionAmount: transactionAmount,
-		EventAmounts:      eventAmounts,
+		TransactionID:       transactionID,
+		Status:              models.ReconciliationMatched,
+		Message:             "All events received exactly once and amounts and currencies match",
+		ExpectedEvents:      expectedEvents,
+		ReceivedEvents:      receivedEvents,
+		TransactionAmount:   transactionAmount,
+		EventAmounts:        eventAmounts,
+		TransactionCurrency: transactionCurrency,
+		EventCurrencies:     eventCurrencies,
 	}, nil
 }
