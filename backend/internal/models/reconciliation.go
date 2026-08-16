@@ -10,7 +10,13 @@ const (
 )
 
 type ReconciliationResult struct {
-	TransactionID string
-	Status        ReconciliationStatus
-	Message       string
+	TransactionID string                 `json:"transaction_id"`
+	Status        ReconciliationStatus   `json:"status"`
+	Message       string                 `json:"message"`
+	ExpectedEvents []string              `json:"expected_events"`
+	ReceivedEvents []string              `json:"received_events"`
+	MissingEvents  []string              `json:"missing_events,omitempty"`
+	DuplicateEvents []string             `json:"duplicate_events,omitempty"`
+	TransactionAmount float64            `json:"transaction_amount"`
+	EventAmounts map[string]float64      `json:"event_amounts,omitempty"`
 }
