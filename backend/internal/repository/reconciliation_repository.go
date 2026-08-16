@@ -99,3 +99,29 @@ func (r *ReconciliationRepository) GetTransactionAmount(
 
 	return amount, nil
 }
+
+func (r *ReconciliationRepository) GetTransactionCurrency(
+	ctx context.Context,
+	transactionID string,
+) (string, error) {
+
+	query := `
+		SELECT currency
+		FROM transactions
+		WHERE id = $1
+	`
+
+	var currency string
+
+	err := r.db.QueryRow(
+		ctx,
+		query,
+		transactionID,
+	).Scan(&currency)
+
+	if err != nil {
+		return "", err
+	}
+
+	return currency, nil
+}
