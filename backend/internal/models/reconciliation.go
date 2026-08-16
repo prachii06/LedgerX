@@ -8,6 +8,7 @@ const (
 	ReconciliationDuplicate ReconciliationStatus = "DUPLICATE"
 	ReconciliationMismatch  ReconciliationStatus = "MISMATCH"
 	ReconciliationCurrencyMismatch ReconciliationStatus = "CURRENCY_MISMATCH"
+	ReconciliationOutOfOrder ReconciliationStatus = "OUT_OF_ORDER"
 )
 
 type ReconciliationResult struct {
@@ -22,5 +23,7 @@ type ReconciliationResult struct {
 	EventAmounts map[string]float64      `json:"event_amounts,omitempty"`
 	TransactionCurrency string            `json:"transaction_currency"`
 	EventCurrencies     map[string]string `json:"event_currencies,omitempty"`
+	ExpectedSequence []string `json:"expected_sequence,omitempty"`
+	ActualSequence   []string `json:"actual_sequence,omitempty"`
 
 }
