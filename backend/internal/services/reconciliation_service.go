@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/prachii06/LedgerX/internal/models"
@@ -56,6 +57,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 	eventCounts := make(map[string]int)
 	eventAmounts := make(map[string]float64)
 
+	// Process all events.
 	for _, event := range events {
 
 		eventType := event.EventType
@@ -70,8 +72,28 @@ func (s *ReconciliationService) ReconcileTransaction(
 		// Extract amount from event payload.
 		if payloadAmount, ok := event.Payload["amount"]; ok {
 
-			if amount, ok := payloadAmount.(float64); ok {
+			switch amount := payloadAmount.(type) {
+
+			case float64:
 				eventAmounts[eventType] = amount
+
+			case float32:
+				eventAmounts[eventType] = float64(amount)
+
+			case int:
+				eventAmounts[eventType] = float64(amount)
+
+			case int64:
+				eventAmounts[eventType] = float64(amount)
+
+			case int32:
+				eventAmounts[eventType] = float64(amount)
+
+			case json.Number:
+				value, err := amount.Float64()
+				if err == nil {
+					eventAmounts[eventType] = value
+				}
 			}
 		}
 	}
@@ -103,17 +125,14 @@ func (s *ReconciliationService) ReconcileTransaction(
 	// Check duplicates.
 	if len(duplicateEvents) > 0 {
 		return &models.ReconciliationResult{
-			TransactionID:     transactionID,
-			Status:            models.ReconciliationDuplicate,
-			Message:           fmt.Sprintf(
-				"Duplicate events detected: %v",
-				duplicateEvents,
-			),
-			ExpectedEvents:    expectedEvents,
-			ReceivedEvents:    receivedEvents,
-			DuplicateEvents:   duplicateEvents,
+			TransactionID:   transactionID,
+			Status:          models.ReconciliationDuplicate,
+			Message:         fmt.Sprintf("Duplicate events detected: %v", duplicateEvents),
+			ExpectedEvents:  expectedEvents,
+			ReceivedEvents:  receivedEvents,
+			DuplicateEvents: duplicateEvents,
 			TransactionAmount: transactionAmount,
-			EventAmounts:      eventAmounts,
+			EventAmounts:    eventAmounts,
 		}, nil
 	}
 
@@ -122,10 +141,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 		return &models.ReconciliationResult{
 			TransactionID:     transactionID,
 			Status:            models.ReconciliationMissing,
-			Message:           fmt.Sprintf(
-				"Missing events: %v",
-				missingEvents,
-			),
+			Message:           fmt.Sprintf("Missing events: %v", missingEvents),
 			ExpectedEvents:    expectedEvents,
 			ReceivedEvents:    receivedEvents,
 			MissingEvents:     missingEvents,
@@ -140,8 +156,8 @@ func (s *ReconciliationService) ReconcileTransaction(
 		if eventAmount != transactionAmount {
 
 			return &models.ReconciliationResult{
-				TransactionID: transactionID,
-				Status:        models.ReconciliationMismatch,
+				TransactionID:     transactionID,
+				Status:            models.ReconciliationMismatch,
 				Message: fmt.Sprintf(
 					"Amount mismatch in %s: transaction=%.2f, event=%.2f",
 					eventType,
