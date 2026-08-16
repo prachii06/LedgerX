@@ -5,7 +5,6 @@ import (
 	"time"
 	"math/rand"
 	"github.com/google/uuid"
-
 	"github.com/prachii06/LedgerX/internal/models"
 )
 
@@ -31,7 +30,12 @@ func (g *EventGenerator) GenerateForTransaction(
 	amount float64,
 	currency string,
 ) error {
+	accountingAmount := amount
 
+	// Simulate an occasional accounting amount mismatch.
+	if rand.Float64() < 0.2 {
+	accountingAmount = amount + 500
+	}
 	events := []models.Event{
 		{
 			ID:            uuid.New().String(),
@@ -67,7 +71,7 @@ func (g *EventGenerator) GenerateForTransaction(
 			EventType:     models.EventAccountingBooked,
 			Payload: map[string]interface{}{
 				"transaction_id": transactionID,
-				"amount":         amount,
+				"amount":         accountingAmount,
 				"currency":       currency,
 				"ledger_status":  "BOOKED",
 				"sequence":       3,
