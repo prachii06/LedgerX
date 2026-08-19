@@ -2,9 +2,11 @@ package generator
 
 import (
 	"context"
-	"time"
 	"math/rand"
+	"time"
+
 	"github.com/google/uuid"
+
 	"github.com/prachii06/LedgerX/internal/models"
 )
 
@@ -30,23 +32,25 @@ func (g *EventGenerator) GenerateForTransaction(
 	amount float64,
 	currency string,
 ) error {
+
 	accountingAmount := amount
 
 	// Simulate an occasional accounting amount mismatch.
 	if rand.Float64() < 0.2 {
-	accountingAmount = amount + 500
+		accountingAmount = amount + 500
 	}
+
 	events := []models.Event{
 		{
 			ID:            uuid.New().String(),
 			TransactionID: transactionID,
 			Source:        models.SourceOrderService,
 			EventType:     models.EventTransactionCreated,
+			Sequence:      1,
 			Payload: map[string]interface{}{
 				"transaction_id": transactionID,
 				"amount":         amount,
 				"currency":       currency,
-				"sequence":       1,
 			},
 			ReceivedAt: time.Now(),
 		},
@@ -55,12 +59,12 @@ func (g *EventGenerator) GenerateForTransaction(
 			TransactionID: transactionID,
 			Source:        models.SourcePaymentGateway,
 			EventType:     models.EventPaymentReceived,
+			Sequence:      2,
 			Payload: map[string]interface{}{
 				"transaction_id": transactionID,
 				"amount":         amount,
 				"currency":       currency,
 				"payment_status": "SUCCESS",
-				"sequence":       2,
 			},
 			ReceivedAt: time.Now(),
 		},
@@ -69,49 +73,46 @@ func (g *EventGenerator) GenerateForTransaction(
 			TransactionID: transactionID,
 			Source:        models.SourceAccountingService,
 			EventType:     models.EventAccountingBooked,
+			Sequence:      3,
 			Payload: map[string]interface{}{
 				"transaction_id": transactionID,
 				"amount":         accountingAmount,
 				"currency":       currency,
 				"ledger_status":  "BOOKED",
-				"sequence":       3,
 			},
 			ReceivedAt: time.Now(),
 		},
 	}
 
 	for i, event := range events {
-		// Simulate a missing accounting event
-	if event.EventType == models.EventAccountingBooked {
-	if rand.Float64() < 0.3 {
-		continue
-	}
-	}
 
-	if err := g.service.CreateEvent(ctx, &event); err != nil {
-		return err
-	}
+		// Simulate a missing accounting event.
+		if event.EventType == models.EventAccountingBooked {
+			if rand.Float64() < 0.3 {
+				continue
+			}
+		}
 
-	// Simulate a duplicate event for EventPaymentReceived with a 30% chance
-	if event.EventType == models.EventPaymentReceived {
-	if rand.Float64() < 0.3 {
-		if err := g.generateDuplicateEvent(ctx, event); err != nil {
+		if err := g.service.CreateEvent(ctx, &event); err != nil {
 			return err
 		}
+
+		// Simulate a duplicate payment event with a 30% chance.
+		if event.EventType == models.EventPaymentReceived {
+			if rand.Float64() < 0.3 {
+				if err := g.generateDuplicateEvent(ctx, event); err != nil {
+					return err
+				}
+			}
+		}
+
+		if i < len(events)-1 {
+			time.Sleep(1 * time.Second)
+		}
 	}
-}
-
-	if i < len(events)-1 {
-		time.Sleep(1 * time.Second)
-	}
-}
-
-
-	
 
 	return nil
 }
-
 
 func (g *EventGenerator) generateDuplicateEvent(
 	ctx context.Context,

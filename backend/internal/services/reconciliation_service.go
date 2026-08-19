@@ -179,26 +179,64 @@ func (s *ReconciliationService) ReconcileTransaction(
 		}, nil
 	}
 
+	// Check for out-of-order events.
+	expectedSequence := []int{1, 2, 3}
+	actualSequence := make([]int, 0, len(events))
+
+	for _, event := range events {
+		actualSequence = append(
+			actualSequence,
+			event.Sequence,
+		)
+	}
+
+	if len(actualSequence) == len(expectedSequence) {
+
+		for i := range expectedSequence {
+
+			if actualSequence[i] != expectedSequence[i] {
+
+				return &models.ReconciliationResult{
+					TransactionID: transactionID,
+					Status:        models.ReconciliationOutOfOrder,
+					Message: fmt.Sprintf(
+						"Events received out of order: expected sequence %v, received sequence %v",
+						expectedSequence,
+						actualSequence,
+					),
+					ExpectedEvents:       expectedEvents,
+					ReceivedEvents:       receivedEvents,
+					ExpectedSequence:    expectedSequence,
+					ActualSequence:      actualSequence,
+					TransactionAmount:   transactionAmount,
+					EventAmounts:        eventAmounts,
+					TransactionCurrency: transactionCurrency,
+					EventCurrencies:     eventCurrencies,
+				}, nil
+			}
+		}
+	}
+
 	// Check currency mismatches.
 	for eventType, eventCurrency := range eventCurrencies {
 
 		if eventCurrency != transactionCurrency {
 
 			return &models.ReconciliationResult{
-				TransactionID:       transactionID,
-				Status:              models.ReconciliationCurrencyMismatch,
+				TransactionID: transactionID,
+				Status:        models.ReconciliationCurrencyMismatch,
 				Message: fmt.Sprintf(
 					"Currency mismatch in %s: transaction=%s, event=%s",
 					eventType,
 					transactionCurrency,
 					eventCurrency,
 				),
-				ExpectedEvents:      expectedEvents,
-				ReceivedEvents:      receivedEvents,
-				TransactionAmount:   transactionAmount,
-				EventAmounts:        eventAmounts,
-				TransactionCurrency: transactionCurrency,
-				EventCurrencies:     eventCurrencies,
+				ExpectedEvents:       expectedEvents,
+				ReceivedEvents:       receivedEvents,
+				TransactionAmount:    transactionAmount,
+				EventAmounts:         eventAmounts,
+				TransactionCurrency:  transactionCurrency,
+				EventCurrencies:      eventCurrencies,
 			}, nil
 		}
 	}
@@ -209,20 +247,20 @@ func (s *ReconciliationService) ReconcileTransaction(
 		if eventAmount != transactionAmount {
 
 			return &models.ReconciliationResult{
-				TransactionID:       transactionID,
-				Status:              models.ReconciliationMismatch,
+				TransactionID: transactionID,
+				Status:        models.ReconciliationMismatch,
 				Message: fmt.Sprintf(
 					"Amount mismatch in %s: transaction=%.2f, event=%.2f",
 					eventType,
 					transactionAmount,
 					eventAmount,
 				),
-				ExpectedEvents:      expectedEvents,
-				ReceivedEvents:      receivedEvents,
-				TransactionAmount:   transactionAmount,
-				EventAmounts:        eventAmounts,
-				TransactionCurrency: transactionCurrency,
-				EventCurrencies:     eventCurrencies,
+				ExpectedEvents:       expectedEvents,
+				ReceivedEvents:       receivedEvents,
+				TransactionAmount:    transactionAmount,
+				EventAmounts:         eventAmounts,
+				TransactionCurrency:  transactionCurrency,
+				EventCurrencies:      eventCurrencies,
 			}, nil
 		}
 	}

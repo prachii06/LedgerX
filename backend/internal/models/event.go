@@ -7,6 +7,7 @@ type Event struct {
 	TransactionID string                 `json:"transaction_id"`
 	Source        string                 `json:"source"`
 	EventType     string                 `json:"event_type"`
+	Sequence      int                    `json:"sequence"`
 	Payload       map[string]interface{} `json:"payload"`
 	ReceivedAt    time.Time              `json:"received_at"`
 	CreatedAt     time.Time              `json:"created_at"`

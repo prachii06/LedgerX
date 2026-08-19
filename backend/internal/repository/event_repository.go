@@ -29,10 +29,11 @@ func (r *EventRepository) Create(
 			transaction_id,
 			source,
 			event_type,
+			sequence,
 			payload,
 			received_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
 	_, err := r.db.Exec(
@@ -42,6 +43,7 @@ func (r *EventRepository) Create(
 		event.TransactionID,
 		event.Source,
 		event.EventType,
+		event.Sequence,
 		event.Payload,
 		event.ReceivedAt,
 	)

@@ -20,6 +20,8 @@ func NewReconciliationRepository(
 	}
 }
 
+
+
 func (r *ReconciliationRepository) GetEventsByTransactionID(
 	ctx context.Context,
 	transactionID string,
@@ -31,9 +33,9 @@ func (r *ReconciliationRepository) GetEventsByTransactionID(
 			transaction_id,
 			source,
 			event_type,
+			sequence,
 			payload,
-			received_at,
-			created_at
+			received_at
 		FROM transaction_events
 		WHERE transaction_id = $1
 		ORDER BY received_at ASC
@@ -45,9 +47,10 @@ func (r *ReconciliationRepository) GetEventsByTransactionID(
 	}
 	defer rows.Close()
 
-	var events []models.Event
+	events := make([]models.Event, 0)
 
 	for rows.Next() {
+
 		var event models.Event
 
 		err := rows.Scan(
@@ -55,9 +58,9 @@ func (r *ReconciliationRepository) GetEventsByTransactionID(
 			&event.TransactionID,
 			&event.Source,
 			&event.EventType,
+			&event.Sequence,
 			&event.Payload,
 			&event.ReceivedAt,
-			&event.CreatedAt,
 		)
 
 		if err != nil {
