@@ -84,6 +84,11 @@ func (g *EventGenerator) GenerateForTransaction(
 		},
 	}
 
+	// Simulate an out-of-order event stream.
+	if rand.Float64() < 0.2 {
+		events[1], events[2] = events[2], events[1]
+	}
+
 	for i, event := range events {
 
 		// Simulate a missing accounting event.
