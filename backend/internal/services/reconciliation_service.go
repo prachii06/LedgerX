@@ -4,20 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
+	"time"
+	"github.com/google/uuid"
 	"github.com/prachii06/LedgerX/internal/models"
 	"github.com/prachii06/LedgerX/internal/repository"
 )
 
 type ReconciliationService struct {
-	repository *repository.ReconciliationRepository
+	repository       *repository.ReconciliationRepository
+	resultRepository *repository.ReconciliationResultRepository
 }
 
 func NewReconciliationService(
 	repository *repository.ReconciliationRepository,
+	resultRepository *repository.ReconciliationResultRepository,
 ) *ReconciliationService {
 	return &ReconciliationService{
-		repository: repository,
+		repository:       repository,
+		resultRepository: resultRepository,
 	}
 }
 
@@ -277,4 +281,21 @@ func (s *ReconciliationService) ReconcileTransaction(
 		TransactionCurrency: transactionCurrency,
 		EventCurrencies:     eventCurrencies,
 	}, nil
+}
+
+
+func (s *ReconciliationService) saveResult(
+	ctx context.Context,
+	result *models.ReconciliationResult,
+) error {
+
+	record := &models.ReconciliationRecord{
+		ID:            uuid.New().String(),
+		TransactionID: result.TransactionID,
+		Status:        string(result.Status),
+		Message:       result.Message,
+		ReconciledAt:  time.Now(),
+	}
+
+	return s.resultRepository.Create(ctx, record)
 }
