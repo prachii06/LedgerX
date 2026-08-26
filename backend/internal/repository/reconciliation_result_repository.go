@@ -46,3 +46,61 @@ func (r *ReconciliationResultRepository) Create(
 
 	return err
 }
+
+
+
+func (r *ReconciliationResultRepository) GetByTransactionID(
+	ctx context.Context,
+	transactionID string,
+) ([]models.ReconciliationRecord, error) {
+
+	query := `
+		SELECT
+			id,
+			transaction_id,
+			status,
+			message,
+			reconciled_at
+		FROM reconciliation_results
+		WHERE transaction_id = $1
+		ORDER BY reconciled_at DESC
+	`
+
+	rows, err := r.db.Query(
+		ctx,
+		query,
+		transactionID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	records := make([]models.ReconciliationRecord, 0)
+
+	for rows.Next() {
+
+		var record models.ReconciliationRecord
+
+		err := rows.Scan(
+			&record.ID,
+			&record.TransactionID,
+			&record.Status,
+			&record.Message,
+			&record.ReconciledAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, record)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}
