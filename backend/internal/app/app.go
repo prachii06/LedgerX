@@ -43,11 +43,15 @@ func Run() {
 	// Repositories
 	transactionRepo := repository.NewTransactionRepository(db)
 	reconciliationRepo := repository.NewReconciliationRepository(db)
+	reconciliationResultRepo := repository.NewReconciliationResultRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 
 	// Services
 	transactionService := services.NewTransactionService(transactionRepo)
-	reconciliationService := services.NewReconciliationService(reconciliationRepo)
+	reconciliationService := services.NewReconciliationService(
+		reconciliationRepo,
+		reconciliationResultRepo,
+	)
 	eventService := services.NewEventService(eventRepo)
 
 	// Generators
