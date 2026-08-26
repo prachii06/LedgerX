@@ -323,3 +323,16 @@ func (s *ReconciliationService) ReconcileTransaction(
 
 	return s.saveAndReturn(ctx, result)
 }
+
+
+
+func (s *ReconciliationService) GetReconciliationHistory(
+	ctx context.Context,
+	transactionID string,
+) ([]models.ReconciliationRecord, error) {
+
+	return s.resultRepository.GetByTransactionID(
+		ctx,
+		transactionID,
+	)
+}
