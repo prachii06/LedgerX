@@ -42,13 +42,14 @@ func (w *ReconciliationWorker) Start(
 	}
 }
 
+
 func (w *ReconciliationWorker) reconcileTransactions(
 	ctx context.Context,
 ) {
 	transactionIDs, err := w.repository.GetTransactionsNeedingReconciliation(ctx)
 	if err != nil {
 		slog.Error(
-			"failed to get unreconciled transactions",
+			"failed to get transactions needing reconciliation",
 			"error",
 			err,
 		)
@@ -56,7 +57,6 @@ func (w *ReconciliationWorker) reconcileTransactions(
 	}
 
 	for _, transactionID := range transactionIDs {
-
 		slog.Info(
 			"reconciling transaction",
 			"transaction_id",
