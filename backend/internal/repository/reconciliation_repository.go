@@ -135,41 +135,44 @@ func (r *ReconciliationRepository) GetTransactionCurrency(
 
 
 
-func (r *ReconciliationRepository) GetUnreconciledTransactionIDs(
+func (r *ReconciliationRepository) GetTransactionsNeedingReconciliation(
 	ctx context.Context,
 ) ([]string, error) {
 
 	query := `
-		SELECT t.id
+		SELECT DISTINCT t.id
 		FROM transactions t
-		WHERE NOT EXISTS (
-			SELECT 1
-			FROM reconciliation_results rr
-			WHERE rr.transaction_id = t.id
-		)
+		LEFT JOIN reconciliation_results rr
+			ON rr.transaction_id = t.id
+		WHERE rr.transaction_id IS NULL
+		   OR EXISTS (
+				SELECT 1
+				FROM transaction_events te
+				WHERE te.transaction_id = t.id
+				AND te.received_at > (
+					SELECT MAX(reconciled_at)
+					FROM reconciliation_results
+					WHERE transaction_id = t.id
+				)
+			)
 	`
 
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	transactionIDs := make([]string, 0)
 
 	for rows.Next() {
-
 		var transactionID string
 
 		if err := rows.Scan(&transactionID); err != nil {
 			return nil, err
 		}
 
-		transactionIDs = append(
-			transactionIDs,
-			transactionID,
-		)
+		transactionIDs = append(transactionIDs, transactionID)
 	}
 
 	if err := rows.Err(); err != nil {
