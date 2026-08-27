@@ -77,6 +77,8 @@ func (r *ReconciliationRepository) GetEventsByTransactionID(
 	return events, nil
 }
 
+
+
 func (r *ReconciliationRepository) GetTransactionAmount(
 	ctx context.Context,
 	transactionID string,
@@ -129,4 +131,50 @@ func (r *ReconciliationRepository) GetTransactionCurrency(
 	}
 
 	return currency, nil
+}
+
+
+
+func (r *ReconciliationRepository) GetUnreconciledTransactionIDs(
+	ctx context.Context,
+) ([]string, error) {
+
+	query := `
+		SELECT t.id
+		FROM transactions t
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM reconciliation_results rr
+			WHERE rr.transaction_id = t.id
+		)
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	transactionIDs := make([]string, 0)
+
+	for rows.Next() {
+
+		var transactionID string
+
+		if err := rows.Scan(&transactionID); err != nil {
+			return nil, err
+		}
+
+		transactionIDs = append(
+			transactionIDs,
+			transactionID,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return transactionIDs, nil
 }
