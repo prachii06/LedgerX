@@ -84,12 +84,31 @@ func (g *EventGenerator) GenerateForTransaction(
 		},
 	}
 
-	// Simulate an out-of-order event stream.
-	if rand.Float64() < 0.2 {
-		events[1], events[2] = events[2], events[1]
+	// Save the first event immediately.
+	if err := g.service.CreateEvent(ctx, &events[0]); err != nil {
+		return err
 	}
 
-	for i, event := range events {
+	// Generate remaining events asynchronously.
+	go g.generateRemainingEvents(
+		transactionID,
+		events[1:],
+	)
+
+	return nil
+}
+
+
+func (g *EventGenerator) generateRemainingEvents(
+	transactionID string,
+	events []models.Event,
+) {
+	ctx := context.Background()
+
+	for _, event := range events {
+
+		// Simulate delayed arrival.
+		time.Sleep(4 * time.Second)
 
 		// Simulate a missing accounting event.
 		if event.EventType == models.EventAccountingBooked {
@@ -99,24 +118,16 @@ func (g *EventGenerator) GenerateForTransaction(
 		}
 
 		if err := g.service.CreateEvent(ctx, &event); err != nil {
-			return err
+			return
 		}
 
-		// Simulate a duplicate payment event with a 30% chance.
+		// Simulate duplicate payment event.
 		if event.EventType == models.EventPaymentReceived {
 			if rand.Float64() < 0.3 {
-				if err := g.generateDuplicateEvent(ctx, event); err != nil {
-					return err
-				}
+				_ = g.generateDuplicateEvent(ctx, event)
 			}
 		}
-
-		if i < len(events)-1 {
-			time.Sleep(1 * time.Second)
-		}
 	}
-
-	return nil
 }
 
 func (g *EventGenerator) generateDuplicateEvent(
