@@ -59,7 +59,7 @@ func Run() {
 	eventService := services.NewEventService(eventRepo)
 
 
-	
+
 	// Kafka
 	kafkaProducer := kafka.NewProducer(cfg.KafkaBrokers)
 	defer kafkaProducer.Close()
@@ -86,7 +86,7 @@ func Run() {
 
 	// Generators
 	transactionGenerator := generator.NewTransactionGenerator(transactionService)
-	eventGenerator := generator.NewEventGenerator(eventService)
+	eventGenerator := generator.NewEventGenerator(kafkaProducer)
 
 	// Application Services
 	simulationService := services.NewSimulationService(
