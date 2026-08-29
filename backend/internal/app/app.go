@@ -12,6 +12,7 @@ import (
 	"github.com/prachii06/LedgerX/internal/server"
 	"github.com/prachii06/LedgerX/internal/services"
 	"github.com/prachii06/LedgerX/internal/worker"
+	"github.com/prachii06/LedgerX/internal/kafka"
 )
 
 func Run() {
@@ -56,6 +57,21 @@ func Run() {
 		reconciliationResultRepo,
 	)
 	eventService := services.NewEventService(eventRepo)
+
+
+	
+	// Kafka
+	kafkaProducer := kafka.NewProducer(cfg.KafkaBrokers)
+	defer kafkaProducer.Close()
+
+	kafkaConsumer := kafka.NewConsumer(
+	cfg.KafkaBrokers,
+	"ledgerx-event-consumer",
+	eventService,
+	)
+	defer kafkaConsumer.Close()
+
+
 
 	// Background Workers
 	reconciliationWorker := worker.NewReconciliationWorker(
