@@ -10,19 +10,22 @@ import (
 	"github.com/prachii06/LedgerX/internal/models"
 )
 
-type EventCreator interface {
-	CreateEvent(ctx context.Context, event *models.Event) error
+type EventPublisher interface {
+	PublishEvent(
+		ctx context.Context,
+		event *models.Event,
+	) error
 }
 
 type EventGenerator struct {
-	service EventCreator
+	publisher EventPublisher
 }
 
 func NewEventGenerator(
-	service EventCreator,
+	publisher EventPublisher,
 ) *EventGenerator {
 	return &EventGenerator{
-		service: service,
+		publisher: publisher,
 	}
 }
 
@@ -84,12 +87,30 @@ func (g *EventGenerator) GenerateForTransaction(
 		},
 	}
 
-	// Simulate an out-of-order event stream.
-	if rand.Float64() < 0.2 {
-		events[1], events[2] = events[2], events[1]
+	// Publish the first event immediately.
+	if err := g.publisher.PublishEvent(
+		ctx,
+		&events[0],
+	); err != nil {
+		return err
 	}
 
-	for i, event := range events {
+	// Generate the remaining events asynchronously.
+	go g.generateRemainingEvents(events[1:])
+
+	return nil
+}
+
+func (g *EventGenerator) generateRemainingEvents(
+	events []models.Event,
+) {
+
+	ctx := context.Background()
+
+	for _, event := range events {
+
+		// Simulate delayed arrival.
+		time.Sleep(4 * time.Second)
 
 		// Simulate a missing accounting event.
 		if event.EventType == models.EventAccountingBooked {
@@ -98,25 +119,25 @@ func (g *EventGenerator) GenerateForTransaction(
 			}
 		}
 
-		if err := g.service.CreateEvent(ctx, &event); err != nil {
-			return err
+		// Publish event to Kafka.
+		if err := g.publisher.PublishEvent(
+			ctx,
+			&event,
+		); err != nil {
+			return
 		}
 
-		// Simulate a duplicate payment event with a 30% chance.
+		// Simulate duplicate payment event.
 		if event.EventType == models.EventPaymentReceived {
+
 			if rand.Float64() < 0.3 {
-				if err := g.generateDuplicateEvent(ctx, event); err != nil {
-					return err
-				}
+				_ = g.generateDuplicateEvent(
+					ctx,
+					event,
+				)
 			}
 		}
-
-		if i < len(events)-1 {
-			time.Sleep(1 * time.Second)
-		}
 	}
-
-	return nil
 }
 
 func (g *EventGenerator) generateDuplicateEvent(
@@ -124,11 +145,11 @@ func (g *EventGenerator) generateDuplicateEvent(
 	event models.Event,
 ) error {
 
+	// Give the duplicate event a new ID.
 	event.ID = uuid.New().String()
 
-	if err := g.service.CreateEvent(ctx, &event); err != nil {
-		return err
-	}
-
-	return nil
+	return g.publisher.PublishEvent(
+		ctx,
+		&event,
+	)
 }

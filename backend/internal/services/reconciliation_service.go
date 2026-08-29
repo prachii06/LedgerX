@@ -27,40 +27,12 @@ func NewReconciliationService(
 	}
 }
 
-func (s *ReconciliationService) saveResult(
-	ctx context.Context,
-	result *models.ReconciliationResult,
-) error {
-
-	record := &models.ReconciliationRecord{
-		ID:            uuid.New().String(),
-		TransactionID: result.TransactionID,
-		Status:        string(result.Status),
-		Message:       result.Message,
-		ReconciledAt:  time.Now(),
-	}
-
-	return s.resultRepository.Create(ctx, record)
-}
-
-func (s *ReconciliationService) saveAndReturn(
-	ctx context.Context,
-	result *models.ReconciliationResult,
-) (*models.ReconciliationResult, error) {
-
-	if err := s.saveResult(ctx, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 func (s *ReconciliationService) ReconcileTransaction(
 	ctx context.Context,
 	transactionID string,
 ) (*models.ReconciliationResult, error) {
 
-	// Get the original transaction amount.
+	// Get original transaction amount.
 	transactionAmount, err := s.repository.GetTransactionAmount(
 		ctx,
 		transactionID,
@@ -69,7 +41,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 		return nil, err
 	}
 
-	// Get the original transaction currency.
+	// Get original transaction currency.
 	transactionCurrency, err := s.repository.GetTransactionCurrency(
 		ctx,
 		transactionID,
@@ -78,7 +50,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 		return nil, err
 	}
 
-	// Get all events for this transaction.
+	// Get all events belonging to the transaction.
 	events, err := s.repository.GetEventsByTransactionID(
 		ctx,
 		transactionID,
@@ -99,7 +71,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 	eventAmounts := make(map[string]float64)
 	eventCurrencies := make(map[string]string)
 
-	// Process all events.
+	// Process events.
 	for _, event := range events {
 
 		eventType := event.EventType
@@ -111,7 +83,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 
 		eventCounts[eventType]++
 
-		// Extract amount from event payload.
+		// Extract amount.
 		if payloadAmount, ok := event.Payload["amount"]; ok {
 
 			switch amount := payloadAmount.(type) {
@@ -125,10 +97,10 @@ func (s *ReconciliationService) ReconcileTransaction(
 			case int:
 				eventAmounts[eventType] = float64(amount)
 
-			case int64:
+			case int32:
 				eventAmounts[eventType] = float64(amount)
 
-			case int32:
+			case int64:
 				eventAmounts[eventType] = float64(amount)
 
 			case json.Number:
@@ -139,13 +111,25 @@ func (s *ReconciliationService) ReconcileTransaction(
 			}
 		}
 
-		// Extract currency from event payload.
+		// Extract currency.
 		if payloadCurrency, ok := event.Payload["currency"]; ok {
 
 			if currency, ok := payloadCurrency.(string); ok {
 				eventCurrencies[eventType] = currency
 			}
 		}
+	}
+
+	// Expected sequence.
+	expectedSequence := []int{1, 2, 3}
+
+	actualSequence := make([]int, 0, len(events))
+
+	for _, event := range events {
+		actualSequence = append(
+			actualSequence,
+			event.Sequence,
+		)
 	}
 
 	// Find missing events.
@@ -172,12 +156,15 @@ func (s *ReconciliationService) ReconcileTransaction(
 		}
 	}
 
-	// Check duplicates.
+	// --------------------------------------------------
+	// DUPLICATE
+	// --------------------------------------------------
+
 	if len(duplicateEvents) > 0 {
 
 		result := &models.ReconciliationResult{
-			TransactionID: transactionID,
-			Status:        models.ReconciliationDuplicate,
+			TransactionID:      transactionID,
+			Status:             models.ReconciliationDuplicate,
 			Message: fmt.Sprintf(
 				"Duplicate events detected: %v",
 				duplicateEvents,
@@ -189,17 +176,22 @@ func (s *ReconciliationService) ReconcileTransaction(
 			EventAmounts:        eventAmounts,
 			TransactionCurrency: transactionCurrency,
 			EventCurrencies:     eventCurrencies,
+			ExpectedSequence:    expectedSequence,
+			ActualSequence:      actualSequence,
 		}
 
 		return s.saveAndReturn(ctx, result)
 	}
 
-	// Check missing events.
+	// --------------------------------------------------
+	// MISSING
+	// --------------------------------------------------
+
 	if len(missingEvents) > 0 {
 
 		result := &models.ReconciliationResult{
-			TransactionID: transactionID,
-			Status:        models.ReconciliationMissing,
+			TransactionID:      transactionID,
+			Status:             models.ReconciliationMissing,
 			Message: fmt.Sprintf(
 				"Missing events: %v",
 				missingEvents,
@@ -211,21 +203,16 @@ func (s *ReconciliationService) ReconcileTransaction(
 			EventAmounts:        eventAmounts,
 			TransactionCurrency: transactionCurrency,
 			EventCurrencies:     eventCurrencies,
+			ExpectedSequence:    expectedSequence,
+			ActualSequence:      actualSequence,
 		}
 
 		return s.saveAndReturn(ctx, result)
 	}
 
-	// Check for out-of-order events.
-	expectedSequence := []int{1, 2, 3}
-	actualSequence := make([]int, 0, len(events))
-
-	for _, event := range events {
-		actualSequence = append(
-			actualSequence,
-			event.Sequence,
-		)
-	}
+	// --------------------------------------------------
+	// OUT OF ORDER
+	// --------------------------------------------------
 
 	if len(actualSequence) == len(expectedSequence) {
 
@@ -243,12 +230,12 @@ func (s *ReconciliationService) ReconcileTransaction(
 					),
 					ExpectedEvents:      expectedEvents,
 					ReceivedEvents:      receivedEvents,
-					ExpectedSequence:    expectedSequence,
-					ActualSequence:      actualSequence,
 					TransactionAmount:   transactionAmount,
 					EventAmounts:        eventAmounts,
 					TransactionCurrency: transactionCurrency,
 					EventCurrencies:     eventCurrencies,
+					ExpectedSequence:    expectedSequence,
+					ActualSequence:      actualSequence,
 				}
 
 				return s.saveAndReturn(ctx, result)
@@ -256,7 +243,10 @@ func (s *ReconciliationService) ReconcileTransaction(
 		}
 	}
 
-	// Check currency mismatches.
+	// --------------------------------------------------
+	// CURRENCY MISMATCH
+	// --------------------------------------------------
+
 	for eventType, eventCurrency := range eventCurrencies {
 
 		if eventCurrency != transactionCurrency {
@@ -276,13 +266,18 @@ func (s *ReconciliationService) ReconcileTransaction(
 				EventAmounts:        eventAmounts,
 				TransactionCurrency: transactionCurrency,
 				EventCurrencies:     eventCurrencies,
+				ExpectedSequence:    expectedSequence,
+				ActualSequence:      actualSequence,
 			}
 
 			return s.saveAndReturn(ctx, result)
 		}
 	}
 
-	// Check amount mismatches.
+	// --------------------------------------------------
+	// AMOUNT MISMATCH
+	// --------------------------------------------------
+
 	for eventType, eventAmount := range eventAmounts {
 
 		if eventAmount != transactionAmount {
@@ -302,28 +297,65 @@ func (s *ReconciliationService) ReconcileTransaction(
 				EventAmounts:        eventAmounts,
 				TransactionCurrency: transactionCurrency,
 				EventCurrencies:     eventCurrencies,
+				ExpectedSequence:    expectedSequence,
+				ActualSequence:      actualSequence,
 			}
 
 			return s.saveAndReturn(ctx, result)
 		}
 	}
 
-	// Everything matches.
+	// --------------------------------------------------
+	// MATCHED
+	// --------------------------------------------------
+
 	result := &models.ReconciliationResult{
-		TransactionID:       transactionID,
-		Status:              models.ReconciliationMatched,
-		Message:             "All events received exactly once and amounts and currencies match",
-		ExpectedEvents:      expectedEvents,
-		ReceivedEvents:      receivedEvents,
-		TransactionAmount:   transactionAmount,
-		EventAmounts:        eventAmounts,
+		TransactionID:      transactionID,
+		Status:             models.ReconciliationMatched,
+		Message:            "All events received exactly once and amounts and currencies match",
+		ExpectedEvents:     expectedEvents,
+		ReceivedEvents:     receivedEvents,
+		TransactionAmount:  transactionAmount,
+		EventAmounts:       eventAmounts,
 		TransactionCurrency: transactionCurrency,
 		EventCurrencies:     eventCurrencies,
+		ExpectedSequence:   expectedSequence,
+		ActualSequence:     actualSequence,
 	}
 
 	return s.saveAndReturn(ctx, result)
 }
 
+// saveAndReturn saves the reconciliation attempt
+// and then returns the result to the caller.
+func (s *ReconciliationService) saveAndReturn(
+	ctx context.Context,
+	result *models.ReconciliationResult,
+) (*models.ReconciliationResult, error) {
+
+	if err := s.saveResult(ctx, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// saveResult persists the reconciliation result.
+func (s *ReconciliationService) saveResult(
+	ctx context.Context,
+	result *models.ReconciliationResult,
+) error {
+
+	record := &models.ReconciliationRecord{
+		ID:            uuid.New().String(),
+		TransactionID: result.TransactionID,
+		Status:        string(result.Status),
+		Message:       result.Message,
+		ReconciledAt:  time.Now(),
+	}
+
+	return s.resultRepository.Create(ctx, record)
+}
 
 
 func (s *ReconciliationService) GetReconciliationHistory(

@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"time"
 	"github.com/prachii06/LedgerX/internal/config"
 	"github.com/prachii06/LedgerX/internal/database"
 	"github.com/prachii06/LedgerX/internal/generator"
@@ -9,6 +11,8 @@ import (
 	"github.com/prachii06/LedgerX/internal/repository"
 	"github.com/prachii06/LedgerX/internal/server"
 	"github.com/prachii06/LedgerX/internal/services"
+	"github.com/prachii06/LedgerX/internal/worker"
+	"github.com/prachii06/LedgerX/internal/kafka"
 )
 
 func Run() {
@@ -54,9 +58,35 @@ func Run() {
 	)
 	eventService := services.NewEventService(eventRepo)
 
+
+
+	// Kafka
+	kafkaProducer := kafka.NewProducer(cfg.KafkaBrokers)
+	defer kafkaProducer.Close()
+
+	kafkaConsumer := kafka.NewConsumer(
+	cfg.KafkaBrokers,
+	"ledgerx-event-consumer",
+	eventService,
+	)
+	defer kafkaConsumer.Close()
+
+
+
+	// Background Workers
+	reconciliationWorker := worker.NewReconciliationWorker(
+	reconciliationRepo,
+	reconciliationService,
+	)
+
+	go reconciliationWorker.Start(
+	context.Background(),
+	5*time.Second,
+	)
+
 	// Generators
 	transactionGenerator := generator.NewTransactionGenerator(transactionService)
-	eventGenerator := generator.NewEventGenerator(eventService)
+	eventGenerator := generator.NewEventGenerator(kafkaProducer)
 
 	// Application Services
 	simulationService := services.NewSimulationService(

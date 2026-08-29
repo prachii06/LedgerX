@@ -19,6 +19,8 @@ func New(port string, db *pgxpool.Pool, transactionHandler *handlers.Transaction
 	router.POST("/transactions", transactionHandler.Create)
 	router.POST("/simulate", simulationHandler.Generate)
 	router.GET("/reconcile/:transaction_id", reconciliationHandler.Reconcile)
+	router.GET("/reconcile/:transaction_id/history",reconciliationHandler.GetHistory)
+
 
 
 	fmt.Printf("server running on port %s\n", port)
