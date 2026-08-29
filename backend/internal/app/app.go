@@ -71,6 +71,8 @@ func Run() {
 	)
 	defer kafkaConsumer.Close()
 
+	go kafkaConsumer.Start(context.Background())   //start kakfa consumer 
+
 
 
 	// Background Workers
