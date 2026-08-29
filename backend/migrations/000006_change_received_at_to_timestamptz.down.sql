@@ -1,0 +1,3 @@
+ALTER TABLE transaction_events
+ALTER COLUMN received_at
+TYPE TIMESTAMP WITHOUT TIME ZONE;
