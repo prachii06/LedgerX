@@ -15,6 +15,7 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+	kafkaBrokers string
 }
 
 func Load() (*Config, error) {
