@@ -3,9 +3,11 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"github.com/prachii06/LedgerX/internal/models"
-	"github.com/segmentio/kafka-go"
 	"log"
+
+	"github.com/segmentio/kafka-go"
+
+	"github.com/prachii06/LedgerX/internal/models"
 )
 
 type EventHandler interface {
@@ -24,12 +26,9 @@ func NewConsumer(
 ) *Consumer {
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: []string{brokers},
-		Topic:   EventTopic,
-		GroupID: groupID,
-
-		// Start reading from the earliest available event
-		// when this consumer group has no previous offset.
+		Brokers:     []string{brokers},
+		Topic:       EventTopic,
+		GroupID:     groupID,
 		StartOffset: kafka.FirstOffset,
 	})
 
@@ -61,6 +60,13 @@ func (c *Consumer) Start(ctx context.Context) {
 			continue
 		}
 
+		log.Printf(
+			"Kafka message received: topic=%s partition=%d offset=%d",
+			message.Topic,
+			message.Partition,
+			message.Offset,
+		)
+
 		var event models.Event
 
 		if err := json.Unmarshal(
@@ -75,6 +81,13 @@ func (c *Consumer) Start(ctx context.Context) {
 
 			continue
 		}
+
+		log.Printf(
+			"Persisting event: transaction=%s type=%s sequence=%d",
+			event.TransactionID,
+			event.EventType,
+			event.Sequence,
+		)
 
 		if err := c.handler.CreateEvent(
 			ctx,
@@ -91,7 +104,7 @@ func (c *Consumer) Start(ctx context.Context) {
 		}
 
 		log.Printf(
-			"Event consumed: transaction=%s type=%s",
+			"Event persisted successfully: transaction=%s type=%s",
 			event.TransactionID,
 			event.EventType,
 		)
