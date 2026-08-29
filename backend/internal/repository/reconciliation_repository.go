@@ -20,8 +20,7 @@ func NewReconciliationRepository(
 	}
 }
 
-
-
+// GetEventsByTransactionID returns all events belonging to a transaction.
 func (r *ReconciliationRepository) GetEventsByTransactionID(
 	ctx context.Context,
 	transactionID string,
@@ -77,8 +76,7 @@ func (r *ReconciliationRepository) GetEventsByTransactionID(
 	return events, nil
 }
 
-
-
+// GetTransactionAmount returns the original transaction amount.
 func (r *ReconciliationRepository) GetTransactionAmount(
 	ctx context.Context,
 	transactionID string,
@@ -105,8 +103,7 @@ func (r *ReconciliationRepository) GetTransactionAmount(
 	return amount, nil
 }
 
-
-
+// GetTransactionCurrency returns the original transaction currency.
 func (r *ReconciliationRepository) GetTransactionCurrency(
 	ctx context.Context,
 	transactionID string,
@@ -133,28 +130,23 @@ func (r *ReconciliationRepository) GetTransactionCurrency(
 	return currency, nil
 }
 
-
-
+// GetTransactionsNeedingReconciliation returns transactions that
+// have not been reconciled yet.
 func (r *ReconciliationRepository) GetTransactionsNeedingReconciliation(
 	ctx context.Context,
 ) ([]string, error) {
 
 	query := `
-		SELECT DISTINCT t.id
+		SELECT t.id
 		FROM transactions t
 		LEFT JOIN reconciliation_results rr
 			ON rr.transaction_id = t.id
 		WHERE rr.transaction_id IS NULL
-		   OR EXISTS (
-				SELECT 1
-				FROM transaction_events te
-				WHERE te.transaction_id = t.id
-				AND te.received_at > (
-					SELECT MAX(reconciled_at)
-					FROM reconciliation_results
-					WHERE transaction_id = t.id
-				)
-			)
+		AND (
+			SELECT MAX(te.received_at)
+			FROM transaction_events te
+			WHERE te.transaction_id = t.id
+		) < NOW() - INTERVAL '10 seconds'
 	`
 
 	rows, err := r.db.Query(ctx, query)
@@ -166,13 +158,17 @@ func (r *ReconciliationRepository) GetTransactionsNeedingReconciliation(
 	transactionIDs := make([]string, 0)
 
 	for rows.Next() {
+
 		var transactionID string
 
 		if err := rows.Scan(&transactionID); err != nil {
 			return nil, err
 		}
 
-		transactionIDs = append(transactionIDs, transactionID)
+		transactionIDs = append(
+			transactionIDs,
+			transactionID,
+		)
 	}
 
 	if err := rows.Err(); err != nil {

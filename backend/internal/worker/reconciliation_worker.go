@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
 	"github.com/prachii06/LedgerX/internal/repository"
 	"github.com/prachii06/LedgerX/internal/services"
 )
@@ -30,8 +31,14 @@ func (w *ReconciliationWorker) Start(
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	slog.Info(
+		"reconciliation worker started",
+		"interval", interval,
+	)
+
 	for {
 		select {
+
 		case <-ctx.Done():
 			slog.Info("reconciliation worker stopped")
 			return
@@ -42,33 +49,39 @@ func (w *ReconciliationWorker) Start(
 	}
 }
 
-
 func (w *ReconciliationWorker) reconcileTransactions(
 	ctx context.Context,
 ) {
-	transactionIDs, err := w.repository.GetTransactionsNeedingReconciliation(ctx)
+
+	transactionIDs, err :=
+		w.repository.GetTransactionsNeedingReconciliation(ctx)
+
 	if err != nil {
+
 		slog.Error(
 			"failed to get transactions needing reconciliation",
-			"error",
-			err,
+			"error", err,
 		)
+
 		return
 	}
 
 	for _, transactionID := range transactionIDs {
+
 		slog.Info(
 			"reconciling transaction",
 			"transaction_id",
 			transactionID,
 		)
 
-		_, err := w.service.ReconcileTransaction(
-			ctx,
-			transactionID,
-		)
+		result, err :=
+			w.service.ReconcileTransaction(
+				ctx,
+				transactionID,
+			)
 
 		if err != nil {
+
 			slog.Error(
 				"failed to reconcile transaction",
 				"transaction_id",
@@ -76,6 +89,14 @@ func (w *ReconciliationWorker) reconcileTransactions(
 				"error",
 				err,
 			)
+
+			continue
 		}
+
+		slog.Info(
+			"transaction reconciled",
+			"transaction_id", transactionID,
+			"status", result.Status,
+		)
 	}
 }
