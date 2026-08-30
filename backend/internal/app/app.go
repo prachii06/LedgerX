@@ -12,6 +12,7 @@ import (
 	"github.com/prachii06/LedgerX/internal/server"
 	"github.com/prachii06/LedgerX/internal/services"
 	"github.com/prachii06/LedgerX/internal/worker"
+	"github.com/prachii06/LedgerX/internal/redis"
 	"time"
 )
 
@@ -39,6 +40,21 @@ func Run() {
 	defer db.Close()
 
 	log.Info("Database connected successfully")
+
+
+
+	// Connect to Redis
+	redisClient := redis.NewClient(cfg)
+	defer redisClient.Close()
+
+	if err := redisClient.Ping(context.Background()); err != nil {
+	log.Error("Failed to connect to Redis", "error", err)
+	panic(err)
+	}
+
+	log.Info("Redis connected successfully")
+
+
 
 	// ----------------------------
 	// Dependency Injection

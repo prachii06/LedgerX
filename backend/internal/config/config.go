@@ -11,7 +11,7 @@ type Config struct {
 	AppEnv       string
 	ServerPort   string
 	KafkaBrokers string
-	RedisHost 	 string
+	RedisHost    string
 	RedisPort    string
 
 	DBHost     string
@@ -29,7 +29,7 @@ func Load() (*Config, error) {
 		ServerPort:   os.Getenv("SERVER_PORT"),
 		KafkaBrokers: os.Getenv("KAFKA_BROKERS"),
 		RedisHost:    os.Getenv("REDIS_HOST"),
-		RedisPort: 	  os.Getenv("REDIS_PORT"),	
+		RedisPort:    os.Getenv("REDIS_PORT"),
 
 		DBHost:     os.Getenv("DB_HOST"),
 		DBPort:     os.Getenv("DB_PORT"),
