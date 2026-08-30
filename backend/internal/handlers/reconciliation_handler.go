@@ -24,21 +24,37 @@ func (h *ReconciliationHandler) Reconcile(c *gin.Context) {
 
 	transactionID := c.Param("transaction_id")
 
-	result, err := h.service.ReconcileTransaction(
+	// Try Redis first.
+	result, err := h.service.GetCachedReconciliation(
 		c.Request.Context(),
 		transactionID,
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"error": err.Error(),
+			},
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
-}
+	if result == nil {
+		c.JSON(
+			http.StatusNotFound,
+			gin.H{
+				"error": "reconciliation result not found",
+			},
+		)
+		return
+	}
 
+	c.JSON(
+		http.StatusOK,
+		result,
+	)
+}
 
 func (h *ReconciliationHandler) GetHistory(c *gin.Context) {
 

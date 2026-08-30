@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/prachii06/LedgerX/internal/cache"
 	"github.com/prachii06/LedgerX/internal/models"
 	"github.com/prachii06/LedgerX/internal/repository"
 )
@@ -15,15 +16,18 @@ import (
 type ReconciliationService struct {
 	repository       *repository.ReconciliationRepository
 	resultRepository *repository.ReconciliationResultRepository
+	cache            *cache.ReconciliationCache
 }
 
 func NewReconciliationService(
 	repository *repository.ReconciliationRepository,
 	resultRepository *repository.ReconciliationResultRepository,
+	reconciliationCache *cache.ReconciliationCache,
 ) *ReconciliationService {
 	return &ReconciliationService{
 		repository:       repository,
 		resultRepository: resultRepository,
+		cache:            reconciliationCache,
 	}
 }
 
@@ -136,6 +140,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 	missingEvents := make([]string, 0)
 
 	for _, eventType := range expectedEvents {
+
 		if eventCounts[eventType] == 0 {
 			missingEvents = append(
 				missingEvents,
@@ -148,6 +153,7 @@ func (s *ReconciliationService) ReconcileTransaction(
 	duplicateEvents := make([]string, 0)
 
 	for _, eventType := range expectedEvents {
+
 		if eventCounts[eventType] > 1 {
 			duplicateEvents = append(
 				duplicateEvents,
@@ -163,8 +169,8 @@ func (s *ReconciliationService) ReconcileTransaction(
 	if len(duplicateEvents) > 0 {
 
 		result := &models.ReconciliationResult{
-			TransactionID:      transactionID,
-			Status:             models.ReconciliationDuplicate,
+			TransactionID: transactionID,
+			Status:        models.ReconciliationDuplicate,
 			Message: fmt.Sprintf(
 				"Duplicate events detected: %v",
 				duplicateEvents,
@@ -190,8 +196,8 @@ func (s *ReconciliationService) ReconcileTransaction(
 	if len(missingEvents) > 0 {
 
 		result := &models.ReconciliationResult{
-			TransactionID:      transactionID,
-			Status:             models.ReconciliationMissing,
+			TransactionID: transactionID,
+			Status:        models.ReconciliationMissing,
 			Message: fmt.Sprintf(
 				"Missing events: %v",
 				missingEvents,
@@ -310,30 +316,36 @@ func (s *ReconciliationService) ReconcileTransaction(
 	// --------------------------------------------------
 
 	result := &models.ReconciliationResult{
-		TransactionID:      transactionID,
-		Status:             models.ReconciliationMatched,
-		Message:            "All events received exactly once and amounts and currencies match",
-		ExpectedEvents:     expectedEvents,
-		ReceivedEvents:     receivedEvents,
-		TransactionAmount:  transactionAmount,
-		EventAmounts:       eventAmounts,
+		TransactionID:       transactionID,
+		Status:              models.ReconciliationMatched,
+		Message:             "All events received exactly once and amounts and currencies match",
+		ExpectedEvents:      expectedEvents,
+		ReceivedEvents:      receivedEvents,
+		TransactionAmount:   transactionAmount,
+		EventAmounts:        eventAmounts,
 		TransactionCurrency: transactionCurrency,
 		EventCurrencies:     eventCurrencies,
-		ExpectedSequence:   expectedSequence,
-		ActualSequence:     actualSequence,
+		ExpectedSequence:    expectedSequence,
+		ActualSequence:      actualSequence,
 	}
 
 	return s.saveAndReturn(ctx, result)
 }
 
 // saveAndReturn saves the reconciliation attempt
-// and then returns the result to the caller.
+// and caches the detailed result in Redis.
 func (s *ReconciliationService) saveAndReturn(
 	ctx context.Context,
 	result *models.ReconciliationResult,
 ) (*models.ReconciliationResult, error) {
 
+	// Save reconciliation history to PostgreSQL.
 	if err := s.saveResult(ctx, result); err != nil {
+		return nil, err
+	}
+
+	// Store the detailed reconciliation result in Redis.
+	if err := s.cache.Set(ctx, result); err != nil {
 		return nil, err
 	}
 
@@ -357,13 +369,44 @@ func (s *ReconciliationService) saveResult(
 	return s.resultRepository.Create(ctx, record)
 }
 
-
 func (s *ReconciliationService) GetReconciliationHistory(
 	ctx context.Context,
 	transactionID string,
 ) ([]models.ReconciliationRecord, error) {
 
 	return s.resultRepository.GetByTransactionID(
+		ctx,
+		transactionID,
+	)
+}
+
+func (s *ReconciliationService) GetCachedReconciliation(
+	ctx context.Context,
+	transactionID string,
+) (*models.ReconciliationResult, error) {
+
+	// 1. Try Redis first.
+	cachedResult, err := s.cache.Get(
+		ctx,
+		transactionID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache HIT.
+	if cachedResult != nil {
+		return cachedResult, nil
+	}
+
+	// Cache MISS.
+	// ReconcileTransaction will:
+	// 1. Read events from PostgreSQL
+	// 2. Calculate the result
+	// 3. Save the reconciliation history
+	// 4. Store the detailed result in Redis
+	return s.ReconcileTransaction(
 		ctx,
 		transactionID,
 	)

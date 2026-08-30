@@ -2,18 +2,20 @@ package app
 
 import (
 	"context"
+	"time"
+
+	"github.com/prachii06/LedgerX/internal/cache"
 	"github.com/prachii06/LedgerX/internal/config"
 	"github.com/prachii06/LedgerX/internal/database"
 	"github.com/prachii06/LedgerX/internal/generator"
 	"github.com/prachii06/LedgerX/internal/handlers"
 	"github.com/prachii06/LedgerX/internal/kafka"
 	"github.com/prachii06/LedgerX/internal/logger"
+	"github.com/prachii06/LedgerX/internal/redis"
 	"github.com/prachii06/LedgerX/internal/repository"
 	"github.com/prachii06/LedgerX/internal/server"
 	"github.com/prachii06/LedgerX/internal/services"
 	"github.com/prachii06/LedgerX/internal/worker"
-	"github.com/prachii06/LedgerX/internal/redis"
-	"time"
 )
 
 func Run() {
@@ -41,20 +43,16 @@ func Run() {
 
 	log.Info("Database connected successfully")
 
-
-
 	// Connect to Redis
 	redisClient := redis.NewClient(cfg)
 	defer redisClient.Close()
 
 	if err := redisClient.Ping(context.Background()); err != nil {
-	log.Error("Failed to connect to Redis", "error", err)
-	panic(err)
+		log.Error("Failed to connect to Redis", "error", err)
+		panic(err)
 	}
 
 	log.Info("Redis connected successfully")
-
-
 
 	// ----------------------------
 	// Dependency Injection
@@ -66,11 +64,15 @@ func Run() {
 	reconciliationResultRepo := repository.NewReconciliationResultRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 
+	// Cache
+	reconciliationCache := cache.NewReconciliationCache(redisClient.Client, 10*time.Minute)
+
 	// Services
 	transactionService := services.NewTransactionService(transactionRepo)
 	reconciliationService := services.NewReconciliationService(
 		reconciliationRepo,
 		reconciliationResultRepo,
+		reconciliationCache,
 	)
 	eventService := services.NewEventService(eventRepo)
 
