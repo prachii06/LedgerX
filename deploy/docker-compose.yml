@@ -44,5 +44,14 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
 
+
+
+  redis:
+    image: redis:7
+    container_name: ledgerx-redis
+    ports:
+      - "6378:6379"
+
+
 volumes:
   postgres_data:
