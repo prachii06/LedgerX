@@ -1,0 +1,2 @@
+ALTER TABLE transaction_events
+DROP CONSTRAINT unique_event_id;
