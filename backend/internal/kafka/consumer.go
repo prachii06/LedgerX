@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-
+	"time"
 	"github.com/segmentio/kafka-go"
 
 	"github.com/prachii06/LedgerX/internal/models"
@@ -37,6 +37,7 @@ func NewConsumer(
 		handler: handler,
 	}
 }
+
 
 func (c *Consumer) Start(ctx context.Context) {
 
@@ -89,15 +90,41 @@ func (c *Consumer) Start(ctx context.Context) {
 			event.Sequence,
 		)
 
-		if err := c.handler.CreateEvent(
-			ctx,
-			&event,
-		); err != nil {
+		// Retry database persistence.
+		const maxRetries = 3
+
+		var persistErr error
+
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+
+			persistErr = c.handler.CreateEvent(
+				ctx,
+				&event,
+			)
+
+			if persistErr == nil {
+				break
+			}
 
 			log.Printf(
-				"Failed to persist event %s: %v",
+				"Failed to persist event %s (attempt %d/%d): %v",
 				event.ID,
-				err,
+				attempt,
+				maxRetries,
+				persistErr,
+			)
+
+			if attempt < maxRetries {
+				time.Sleep(time.Duration(attempt) * time.Second)
+			}
+		}
+
+		if persistErr != nil {
+
+			log.Printf(
+				"Event permanently failed after %d attempts: %s",
+				maxRetries,
+				event.ID,
 			)
 
 			continue
