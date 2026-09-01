@@ -137,16 +137,27 @@ func (r *ReconciliationRepository) GetTransactionsNeedingReconciliation(
 ) ([]string, error) {
 
 	query := `
-		SELECT t.id
+		SELECT DISTINCT t.id
 		FROM transactions t
-		LEFT JOIN reconciliation_results rr
-			ON rr.transaction_id = t.id
-		WHERE rr.transaction_id IS NULL
-		AND (
-			SELECT MAX(te.received_at)
-			FROM transaction_events te
-			WHERE te.transaction_id = t.id
-		) < NOW() - INTERVAL '10 seconds'
+		WHERE
+			NOT EXISTS (
+				SELECT 1
+				FROM reconciliation_results rr
+				WHERE rr.transaction_id = t.id
+			)
+			OR EXISTS (
+				SELECT 1
+				FROM transaction_events te
+				WHERE te.transaction_id = t.id
+				AND te.received_at > (
+					SELECT COALESCE(
+						MAX(rr.reconciled_at),
+						'1970-01-01'
+					)
+					FROM reconciliation_results rr
+					WHERE rr.transaction_id = t.id
+				)
+			)
 	`
 
 	rows, err := r.db.Query(ctx, query)
@@ -165,10 +176,7 @@ func (r *ReconciliationRepository) GetTransactionsNeedingReconciliation(
 			return nil, err
 		}
 
-		transactionIDs = append(
-			transactionIDs,
-			transactionID,
-		)
+		transactionIDs = append(transactionIDs, transactionID)
 	}
 
 	if err := rows.Err(); err != nil {
