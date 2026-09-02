@@ -91,4 +91,3 @@ func (r *TransactionRepository) FindByExternalID(
 
 	return transaction, nil
 }
-

@@ -47,8 +47,6 @@ func (r *ReconciliationResultRepository) Create(
 	return err
 }
 
-
-
 func (r *ReconciliationResultRepository) GetByTransactionID(
 	ctx context.Context,
 	transactionID string,

@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/prachii06/LedgerX/internal/metrics"
 	"github.com/prachii06/LedgerX/internal/models"
 	"github.com/segmentio/kafka-go"
 )
 
 const (
-	EventTopic       = "transaction-events"
-	DeadLetterTopic  = "transaction-events-dlq"
+	EventTopic      = "transaction-events"
+	DeadLetterTopic = "transaction-events-dlq"
 )
 
 type Producer struct {
@@ -52,7 +53,14 @@ func (p *Producer) PublishEvent(
 		Value: payload,
 	}
 
-	return p.writer.WriteMessages(ctx, message)
+	err = p.writer.WriteMessages(ctx, message)
+	if err != nil {
+		metrics.ProducerErrorsTotal.Inc()
+		return err
+	}
+
+	metrics.EventsProducedTotal.Inc()
+	return nil
 }
 
 func (p *Producer) PublishToDLQ(
