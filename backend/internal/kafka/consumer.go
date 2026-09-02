@@ -8,6 +8,7 @@ import (
 
 	"github.com/segmentio/kafka-go"
 
+	"github.com/prachii06/LedgerX/internal/metrics"
 	"github.com/prachii06/LedgerX/internal/models"
 )
 
@@ -90,6 +91,11 @@ func (c *Consumer) Start(ctx context.Context) {
 // processMessage processes a single Kafka message, handling retries and DLQ.
 // It returns true if the message should be committed, false otherwise.
 func (c *Consumer) processMessage(ctx context.Context, message kafka.Message) bool {
+	start := time.Now()
+	defer func() {
+		metrics.EventProcessingDuration.Observe(time.Since(start).Seconds())
+	}()
+
 	var event models.Event
 
 	if err := json.Unmarshal(message.Value, &event); err != nil {
@@ -136,6 +142,7 @@ func (c *Consumer) processMessage(ctx context.Context, message kafka.Message) bo
 
 	// If all retries failed, send event to DLQ.
 	if persistErr != nil {
+		metrics.EventsFailedTotal.Inc()
 		log.Printf("Event permanently failed after %d attempts: %s", maxRetries, event.ID)
 
 		if err := c.dlq.PublishToDLQ(ctx, &event); err != nil {
@@ -144,10 +151,13 @@ func (c *Consumer) processMessage(ctx context.Context, message kafka.Message) bo
 			return false
 		}
 
+		metrics.EventsDLQTotal.Inc()
+
 		log.Printf("Event sent to DLQ: %s", event.ID)
 		return true // Commit after successful DLQ publishing
 	}
 
+	metrics.EventsConsumedTotal.Inc()
 	log.Printf("Event persisted successfully: transaction=%s type=%s", event.TransactionID, event.EventType)
 	return true
 }

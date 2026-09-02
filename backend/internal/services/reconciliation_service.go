@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/prachii06/LedgerX/internal/cache"
+	"github.com/prachii06/LedgerX/internal/metrics"
 	"github.com/prachii06/LedgerX/internal/models"
 	"github.com/prachii06/LedgerX/internal/repository"
 )
@@ -343,6 +344,8 @@ func (s *ReconciliationService) saveAndReturn(
 	if err := s.saveResult(ctx, result); err != nil {
 		return nil, err
 	}
+
+	metrics.ReconciliationsTotal.WithLabelValues(string(result.Status)).Inc()
 
 	// Store the detailed reconciliation result in Redis.
 	if err := s.cache.Set(ctx, result); err != nil {

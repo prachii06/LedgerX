@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	EventTopic       = "transaction-events"
-	DeadLetterTopic  = "transaction-events-dlq"
+	EventTopic      = "transaction-events"
+	DeadLetterTopic = "transaction-events-dlq"
 )
 
 type Producer struct {

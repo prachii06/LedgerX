@@ -3,8 +3,8 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"github.com/prachii06/LedgerX/internal/config"
+	"github.com/redis/go-redis/v9"
 )
 
 type Client struct {

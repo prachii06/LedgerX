@@ -1,10 +1,9 @@
-package main 
-
+package main
 
 import (
 	"github.com/prachii06/LedgerX/internal/app"
 )
 
-func main(){
+func main() {
 	app.Run()
 }

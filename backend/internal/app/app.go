@@ -11,6 +11,7 @@ import (
 	"github.com/prachii06/LedgerX/internal/handlers"
 	"github.com/prachii06/LedgerX/internal/kafka"
 	"github.com/prachii06/LedgerX/internal/logger"
+	"github.com/prachii06/LedgerX/internal/metrics"
 	"github.com/prachii06/LedgerX/internal/redis"
 	"github.com/prachii06/LedgerX/internal/repository"
 	"github.com/prachii06/LedgerX/internal/server"
@@ -24,6 +25,9 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Initialize metrics
+	metrics.Init()
 
 	// Initialize logger
 	log := logger.New()
@@ -81,11 +85,11 @@ func Run() {
 	defer kafkaProducer.Close()
 
 	kafkaConsumer := kafka.NewConsumer(
-	cfg.KafkaBrokers,
-	"ledgerx-event-consumer",
-	eventService,
-	kafkaProducer,
-    )
+		cfg.KafkaBrokers,
+		"ledgerx-event-consumer",
+		eventService,
+		kafkaProducer,
+	)
 	defer kafkaConsumer.Close()
 
 	go kafkaConsumer.Start(context.Background()) //start kakfa consumer

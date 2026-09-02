@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
-	"github.com/redis/go-redis/v9"
 	"github.com/prachii06/LedgerX/internal/models"
+	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 type ReconciliationCache struct {
@@ -23,7 +23,6 @@ func NewReconciliationCache(
 		ttl:    ttl,
 	}
 }
-
 
 //to check whether reconciliation result exists in Redis
 func (c *ReconciliationCache) Get(
@@ -58,7 +57,6 @@ func (c *ReconciliationCache) Get(
 	return &result, nil
 }
 
-
 //to store a new reconciliation result
 func (c *ReconciliationCache) Set(
 	ctx context.Context,
@@ -82,7 +80,6 @@ func (c *ReconciliationCache) Set(
 		c.ttl,
 	).Err()
 }
-
 
 //to remove stale cached result
 func (c *ReconciliationCache) Delete(

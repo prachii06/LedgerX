@@ -1,5 +1,5 @@
 package generator
 
-type Generator interface{
+type Generator interface {
 	Generate(count int) error
 }

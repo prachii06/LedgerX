@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"errors"
-	"time"
 	"github.com/google/uuid"
 	"github.com/prachii06/LedgerX/internal/models"
 	"github.com/prachii06/LedgerX/internal/repository"
+	"time"
 )
 
 type TransactionService struct {
@@ -46,7 +46,6 @@ func (s *TransactionService) CreateTransaction(
 	transaction.Status = models.StatusPending
 	transaction.CreatedAt = time.Now()
 	transaction.UpdatedAt = time.Now()
-
 
 	return s.repo.Create(ctx, transaction)
 }
