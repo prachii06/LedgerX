@@ -81,10 +81,11 @@ func Run() {
 	defer kafkaProducer.Close()
 
 	kafkaConsumer := kafka.NewConsumer(
-		cfg.KafkaBrokers,
-		"ledgerx-event-consumer",
-		eventService,
-	)
+	cfg.KafkaBrokers,
+	"ledgerx-event-consumer",
+	eventService,
+	kafkaProducer,
+    )
 	defer kafkaConsumer.Close()
 
 	go kafkaConsumer.Start(context.Background()) //start kakfa consumer
