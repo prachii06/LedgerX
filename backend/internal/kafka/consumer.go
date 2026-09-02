@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"time"
+
 	"github.com/segmentio/kafka-go"
 
 	"github.com/prachii06/LedgerX/internal/models"
@@ -14,15 +15,24 @@ type EventHandler interface {
 	CreateEvent(ctx context.Context, event *models.Event) error
 }
 
+type DLQPublisher interface {
+	PublishToDLQ(
+		ctx context.Context,
+		event *models.Event,
+	) error
+}
+
 type Consumer struct {
 	reader  *kafka.Reader
 	handler EventHandler
+	dlq     DLQPublisher
 }
 
 func NewConsumer(
 	brokers string,
 	groupID string,
 	handler EventHandler,
+	dlq DLQPublisher,
 ) *Consumer {
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
@@ -35,9 +45,9 @@ func NewConsumer(
 	return &Consumer{
 		reader:  reader,
 		handler: handler,
+		dlq:     dlq,
 	}
 }
-
 
 func (c *Consumer) Start(ctx context.Context) {
 
@@ -45,7 +55,8 @@ func (c *Consumer) Start(ctx context.Context) {
 
 	for {
 
-		message, err := c.reader.ReadMessage(ctx)
+		// FetchMessage does NOT automatically commit the offset.
+		message, err := c.reader.FetchMessage(ctx)
 
 		if err != nil {
 
@@ -68,74 +79,77 @@ func (c *Consumer) Start(ctx context.Context) {
 			message.Offset,
 		)
 
-		var event models.Event
-
-		if err := json.Unmarshal(
-			message.Value,
-			&event,
-		); err != nil {
-
-			log.Printf(
-				"Failed to decode Kafka event: %v",
-				err,
-			)
-
-			continue
-		}
-
-		log.Printf(
-			"Persisting event: transaction=%s type=%s sequence=%d",
-			event.TransactionID,
-			event.EventType,
-			event.Sequence,
-		)
-
-		// Retry database persistence.
-		const maxRetries = 3
-
-		var persistErr error
-
-		for attempt := 1; attempt <= maxRetries; attempt++ {
-
-			persistErr = c.handler.CreateEvent(
-				ctx,
-				&event,
-			)
-
-			if persistErr == nil {
-				break
-			}
-
-			log.Printf(
-				"Failed to persist event %s (attempt %d/%d): %v",
-				event.ID,
-				attempt,
-				maxRetries,
-				persistErr,
-			)
-
-			if attempt < maxRetries {
-				time.Sleep(time.Duration(attempt) * time.Second)
+		if shouldCommit := c.processMessage(ctx, message); shouldCommit {
+			if err := c.reader.CommitMessages(ctx, message); err != nil {
+				log.Printf("Failed to commit Kafka message: %v", err)
 			}
 		}
-
-		if persistErr != nil {
-
-			log.Printf(
-				"Event permanently failed after %d attempts: %s",
-				maxRetries,
-				event.ID,
-			)
-
-			continue
-		}
-
-		log.Printf(
-			"Event persisted successfully: transaction=%s type=%s",
-			event.TransactionID,
-			event.EventType,
-		)
 	}
+}
+
+// processMessage processes a single Kafka message, handling retries and DLQ.
+// It returns true if the message should be committed, false otherwise.
+func (c *Consumer) processMessage(ctx context.Context, message kafka.Message) bool {
+	var event models.Event
+
+	if err := json.Unmarshal(message.Value, &event); err != nil {
+		log.Printf("Failed to decode Kafka event: %v", err)
+		// We cannot process an invalid event.
+		// For now, leave the message uncommitted.
+		return false
+	}
+
+	log.Printf(
+		"Persisting event: transaction=%s type=%s sequence=%d",
+		event.TransactionID,
+		event.EventType,
+		event.Sequence,
+	)
+
+	// Retry database persistence.
+	const maxRetries = 3
+	var persistErr error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		persistErr = c.handler.CreateEvent(ctx, &event)
+		if persistErr == nil {
+			break
+		}
+
+		log.Printf(
+			"Failed to persist event %s (attempt %d/%d): %v",
+			event.ID,
+			attempt,
+			maxRetries,
+			persistErr,
+		)
+
+		if attempt < maxRetries {
+			// Retry with increasing delay.
+			select {
+			case <-ctx.Done():
+				return false
+			case <-time.After(time.Duration(attempt) * time.Millisecond * 10): // Reduced delay for testing
+			}
+		}
+	}
+
+	// If all retries failed, send event to DLQ.
+	if persistErr != nil {
+		log.Printf("Event permanently failed after %d attempts: %s", maxRetries, event.ID)
+
+		if err := c.dlq.PublishToDLQ(ctx, &event); err != nil {
+			log.Printf("Failed to publish event %s to DLQ: %v", event.ID, err)
+			// DO NOT commit the Kafka message. Kafka will redeliver it.
+			return false
+		}
+
+		log.Printf("Event sent to DLQ: %s", event.ID)
+		return true // Commit after successful DLQ publishing
+	}
+
+	log.Printf("Event persisted successfully: transaction=%s type=%s", event.TransactionID, event.EventType)
+	return true
 }
 
 func (c *Consumer) Close() error {
