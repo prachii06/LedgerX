@@ -24,7 +24,7 @@ func NewReconciliationCache(
 	}
 }
 
-//to check whether reconciliation result exists in Redis
+// to check whether reconciliation result exists in Redis
 func (c *ReconciliationCache) Get(
 	ctx context.Context,
 	transactionID string,
@@ -57,7 +57,7 @@ func (c *ReconciliationCache) Get(
 	return &result, nil
 }
 
-//to store a new reconciliation result
+// to store a new reconciliation result
 func (c *ReconciliationCache) Set(
 	ctx context.Context,
 	result *models.ReconciliationResult,
@@ -81,7 +81,7 @@ func (c *ReconciliationCache) Set(
 	).Err()
 }
 
-//to remove stale cached result
+// to remove stale cached result
 func (c *ReconciliationCache) Delete(
 	ctx context.Context,
 	transactionID string,

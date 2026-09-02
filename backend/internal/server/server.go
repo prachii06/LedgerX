@@ -12,6 +12,9 @@ import (
 func New(port string, db *pgxpool.Pool, transactionHandler *handlers.TransactionHandler, simulationHandler *handlers.SimulationHandler, reconciliationHandler *handlers.ReconciliationHandler) *gin.Engine {
 	router := gin.Default()
 
+	// Add Prometheus HTTP middleware
+	router.Use(MetricsMiddleware())
+
 	healthHandler := handlers.NewHealthHandler(db)
 
 	router.GET("/health", healthHandler.Health)

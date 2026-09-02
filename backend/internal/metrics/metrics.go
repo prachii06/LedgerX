@@ -49,6 +49,41 @@ var (
 		},
 	)
 
+	// HTTPRequestsTotal tracks HTTP requests by method, route, and status code.
+	HTTPRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ledgerx_http_requests_total",
+			Help: "Total number of HTTP requests.",
+		},
+		[]string{"method", "route", "status"},
+	)
+
+	// HTTPRequestDuration tracks HTTP request durations by method and route.
+	HTTPRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "ledgerx_http_request_duration_seconds",
+			Help:    "HTTP request latency.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"method", "route"},
+	)
+
+	// EventsProducedTotal tracks the total number of Kafka events successfully produced.
+	EventsProducedTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "ledgerx_events_produced_total",
+			Help: "Total number of Kafka events successfully published.",
+		},
+	)
+
+	// ProducerErrorsTotal tracks Kafka producer errors.
+	ProducerErrorsTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "ledgerx_producer_errors_total",
+			Help: "Total number of Kafka producer errors.",
+		},
+	)
+
 	initOnce sync.Once
 )
 
@@ -61,5 +96,9 @@ func Init() {
 		prometheus.MustRegister(EventsDLQTotal)
 		prometheus.MustRegister(ReconciliationsTotal)
 		prometheus.MustRegister(EventProcessingDuration)
+		prometheus.MustRegister(HTTPRequestsTotal)
+		prometheus.MustRegister(HTTPRequestDuration)
+		prometheus.MustRegister(EventsProducedTotal)
+		prometheus.MustRegister(ProducerErrorsTotal)
 	})
 }
