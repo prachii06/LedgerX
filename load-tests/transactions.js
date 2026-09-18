@@ -15,6 +15,7 @@ export const options = {
         http_req_duration: ['p(95)<500'], // 95% of requests should be below 500ms
         http_req_failed: ['rate<0.01'],   // Error rate should be less than 1%
     },
+    summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
 };
 
 export default function () {

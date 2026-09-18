@@ -36,16 +36,18 @@ func NewSimulationService(
 	}
 }
 
-func (s *SimulationService) Generate(count int) error {
+func (s *SimulationService) Generate(count int) ([]string, error) {
 
 	transactions, err := s.transactionGenerator.Generate(count)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("TRANSACTIONS:", transactions)
 
+	var ids []string
 	for _, transaction := range transactions {
+		ids = append(ids, transaction.ID)
 
 		fmt.Println("GENERATING EVENTS FOR:", transaction.ID)
 
@@ -57,9 +59,9 @@ func (s *SimulationService) Generate(count int) error {
 		)
 
 		if err != nil {
-			return err
+			return ids, err
 		}
 	}
 
-	return nil
+	return ids, nil
 }

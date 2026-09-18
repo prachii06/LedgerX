@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/prachii06/LedgerX/internal/metrics"
 	"github.com/prachii06/LedgerX/internal/models"
@@ -27,6 +28,7 @@ func NewProducer(brokers string) *Producer {
 			Topic:                  EventTopic,
 			Balancer:               &kafka.LeastBytes{},
 			AllowAutoTopicCreation: true,
+			BatchTimeout:           10 * time.Millisecond,
 		},
 
 		dlqWriter: &kafka.Writer{
@@ -34,6 +36,7 @@ func NewProducer(brokers string) *Producer {
 			Topic:                  DeadLetterTopic,
 			Balancer:               &kafka.LeastBytes{},
 			AllowAutoTopicCreation: true,
+			BatchTimeout:           10 * time.Millisecond,
 		},
 	}
 }

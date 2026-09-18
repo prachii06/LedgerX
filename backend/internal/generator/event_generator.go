@@ -15,6 +15,10 @@ type EventPublisher interface {
 		ctx context.Context,
 		event *models.Event,
 	) error
+	PublishToDLQ(
+		ctx context.Context,
+		event *models.Event,
+	) error
 }
 
 type EventGenerator struct {
@@ -92,7 +96,8 @@ func (g *EventGenerator) GenerateForTransaction(
 		ctx,
 		&events[0],
 	); err != nil {
-		return err
+		// If publishing to the main topic fails, send to DLQ
+		_ = g.publisher.PublishToDLQ(ctx, &events[0])
 	}
 
 	// Generate the remaining events asynchronously.
@@ -124,7 +129,9 @@ func (g *EventGenerator) generateRemainingEvents(
 			ctx,
 			&event,
 		); err != nil {
-			return
+			// If publishing to the main topic fails, send to DLQ instead of silently returning
+			_ = g.publisher.PublishToDLQ(ctx, &event)
+			continue
 		}
 
 		// Simulate duplicate payment event.
