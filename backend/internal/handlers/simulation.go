@@ -31,7 +31,8 @@ func (h *SimulationHandler) Generate(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.Generate(request.Count); err != nil {
+	ids, err := h.service.Generate(request.Count)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -39,7 +40,8 @@ func (h *SimulationHandler) Generate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Simulation completed",
-		"count":   request.Count,
+		"message":         "Simulation completed",
+		"count":           request.Count,
+		"transaction_ids": ids,
 	})
 }
