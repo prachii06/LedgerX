@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/prachii06/LedgerX/internal/models"
 )
@@ -43,13 +42,11 @@ func (s *SimulationService) Generate(count int) ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Println("TRANSACTIONS:", transactions)
+	ids := make([]string, 0, len(transactions))
 
-	var ids []string
 	for _, transaction := range transactions {
-		ids = append(ids, transaction.ID)
 
-		fmt.Println("GENERATING EVENTS FOR:", transaction.ID)
+		ids = append(ids, transaction.ID)
 
 		err := s.eventGenerator.GenerateForTransaction(
 			context.Background(),
