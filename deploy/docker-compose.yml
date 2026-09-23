@@ -7,11 +7,12 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     networks:
       - ledgerx_net
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
@@ -22,7 +23,8 @@ services:
     image: apache/kafka:4.0.0
     container_name: ledgerx-kafka
     ports:
-      - "9092:29092"
+      - "127.0.0.1:9092:29092"
+    restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -50,8 +52,10 @@ services:
   ledgerx-redis:
     image: redis:7
     container_name: ledgerx-redis
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6378:6379"
+      - "127.0.0.1:6378:6379"
+    restart: unless-stopped
     volumes:
       - redis_data:/data
     networks:
@@ -66,7 +70,8 @@ services:
     image: prom/prometheus:latest
     container_name: ledgerx-prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -78,6 +83,7 @@ services:
     container_name: ledgerx-grafana
     ports:
       - "3000:3000"
+    restart: unless-stopped
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
@@ -92,6 +98,7 @@ services:
     container_name: ledgerx-backend
     ports:
       - "8080:8080"
+    restart: unless-stopped
     env_file:
       - .env
     networks:

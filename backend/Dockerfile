@@ -18,10 +18,19 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ledgerx-server ./
 # Stage 2: Runtime
 FROM alpine:latest
 
+# Create a non-root user and group
+RUN adduser -D -g '' appuser
+
 WORKDIR /app
 
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/ledgerx-server .
+
+# Change ownership of the app directory
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Expose port 8080
 EXPOSE 8080
