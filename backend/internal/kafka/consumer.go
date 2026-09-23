@@ -37,11 +37,25 @@ func NewConsumer(
 ) *Consumer {
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{brokers},
-		Topic:       EventTopic,
-		GroupID:     groupID,
-		StartOffset: kafka.FirstOffset,
-	})
+    Brokers: []string{brokers},
+    Topic:   EventTopic,
+    GroupID: groupID,
+
+    StartOffset: kafka.FirstOffset,
+
+    // Keep checking for topic/partition changes.
+    WatchPartitionChanges: true,
+    PartitionWatchInterval: 2 * time.Second,
+
+    // Make the consumer group behavior explicit.
+    GroupBalancers: []kafka.GroupBalancer{
+        &kafka.RangeGroupBalancer{},
+    },
+
+    MinBytes: 1,
+    MaxBytes: 10e6,
+    MaxWait:  1 * time.Second,
+})
 
 	return &Consumer{
 		reader:  reader,
