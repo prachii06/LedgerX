@@ -4,7 +4,13 @@ import { Server } from "lucide-react"
 // A simple function to fetch and parse the prometheus text format
 async function fetchMetrics() {
   try {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+    const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const API_BASE_URL = (configuredApiUrl && configuredApiUrl.trim() !== "") 
+      ? configuredApiUrl.trim() 
+      : (process.env.NODE_ENV === "production" ? "MISSING_BACKEND_URL" : "http://localhost:8080");
+
+    if (API_BASE_URL === "MISSING_BACKEND_URL") return null;
+
     const res = await fetch(`${API_BASE_URL}/metrics`, { cache: "no-store" })
     if (!res.ok) return null
     const text = await res.text()
