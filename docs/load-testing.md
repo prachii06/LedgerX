@@ -461,8 +461,6 @@ After Kafka optimization:
 
 ## 18. Before vs After
 
-This is probably the most important table to put in your final project documentation:
-
 | Metric | Before Fix | After Fix |
 |---|---|---|
 | /simulate p95 | 5.01 s | 164.14 ms |
