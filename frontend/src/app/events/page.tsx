@@ -1,10 +1,18 @@
+"use client";
+
 import { fetchEvents } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatDate } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import useSWR from "swr"
 
-export default async function EventsPage() {
-  const events = await fetchEvents(300).catch(() => [])
+export default function EventsPage() {
+  const { data: eventsData } = useSWR(
+    'events-stream',
+    () => fetchEvents(300).catch(() => []),
+    { revalidateOnFocus: false }
+  )
+  const events = eventsData || [];
 
   return (
     <div className="space-y-6">

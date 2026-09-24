@@ -18,17 +18,20 @@ type ReconciliationService struct {
 	repository       *repository.ReconciliationRepository
 	resultRepository *repository.ReconciliationResultRepository
 	cache            *cache.ReconciliationCache
+	broadcaster      EventBroadcaster
 }
 
 func NewReconciliationService(
 	repository *repository.ReconciliationRepository,
 	resultRepository *repository.ReconciliationResultRepository,
 	reconciliationCache *cache.ReconciliationCache,
+	broadcaster EventBroadcaster,
 ) *ReconciliationService {
 	return &ReconciliationService{
 		repository:       repository,
 		resultRepository: resultRepository,
 		cache:            reconciliationCache,
+		broadcaster:      broadcaster,
 	}
 }
 
@@ -350,6 +353,10 @@ func (s *ReconciliationService) saveAndReturn(
 	// Store the detailed reconciliation result in Redis.
 	if err := s.cache.Set(ctx, result); err != nil {
 		return nil, err
+	}
+
+	if s.broadcaster != nil {
+		s.broadcaster.BroadcastMessage("RECONCILIATION_COMPLETED", result.TransactionID, string(result.Status), result)
 	}
 
 	return result, nil

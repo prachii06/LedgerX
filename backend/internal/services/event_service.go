@@ -7,14 +7,17 @@ import (
 )
 
 type EventService struct {
-	repository *repository.EventRepository
+	repository  *repository.EventRepository
+	broadcaster EventBroadcaster
 }
 
 func NewEventService(
 	repository *repository.EventRepository,
+	broadcaster EventBroadcaster,
 ) *EventService {
 	return &EventService{
-		repository: repository,
+		repository:  repository,
+		broadcaster: broadcaster,
 	}
 }
 
@@ -22,7 +25,11 @@ func (s *EventService) CreateEvent(
 	ctx context.Context,
 	event *models.Event,
 ) error {
-	return s.repository.Create(ctx, event)
+	err := s.repository.Create(ctx, event)
+	if err == nil && s.broadcaster != nil {
+		s.broadcaster.BroadcastMessage("EVENT_PERSISTED", event.TransactionID, "", event)
+	}
+	return err
 }
 
 func (s *EventService) GetEvents(
