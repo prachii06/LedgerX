@@ -21,7 +21,7 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-card px-4 py-6 text-card-foreground">
+    <div className="flex h-full w-64 flex-col border-r border-border/50 bg-card/40 backdrop-blur-xl px-4 py-6 text-card-foreground shadow-2xl">
       <div className="flex items-center gap-2 px-2 pb-6">
         <span className="text-xl font-bold tracking-tight">LedgerX</span>
       </div>

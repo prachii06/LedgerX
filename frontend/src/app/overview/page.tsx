@@ -32,44 +32,52 @@ export default async function OverviewPage() {
 
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="hover:-translate-y-1 transition-transform duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-            <ListOrdered className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-primary/10 rounded-full">
+              <ListOrdered className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{total}</div>
-            <p className="text-xs text-muted-foreground">Processed by LedgerX</p>
+            <div className="text-3xl font-bold bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">{total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Processed by LedgerX</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:-translate-y-1 transition-transform duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Reconciled</CardTitle>
-            <ActivitySquare className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-emerald-500/10 rounded-full">
+              <ActivitySquare className="h-4 w-4 text-emerald-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">{matched}</div>
-            <p className="text-xs text-muted-foreground">Successfully matched events</p>
+            <div className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">{matched}</div>
+            <p className="text-xs text-muted-foreground mt-1">Successfully matched events</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:-translate-y-1 transition-transform duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Reconciliation Issues</CardTitle>
-            <FileWarning className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-rose-500/10 rounded-full">
+              <FileWarning className="h-4 w-4 text-rose-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{issues}</div>
-            <p className="text-xs text-muted-foreground">Require manual investigation</p>
+            <div className="text-3xl font-bold bg-gradient-to-r from-rose-400 to-red-500 bg-clip-text text-transparent">{issues}</div>
+            <p className="text-xs text-muted-foreground mt-1">Require manual investigation</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:-translate-y-1 transition-transform duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <RefreshCcw className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-blue-500/10 rounded-full">
+              <RefreshCcw className="h-4 w-4 text-blue-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-500">{pending}</div>
-            <p className="text-xs text-muted-foreground">Awaiting events</p>
+            <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">{pending}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting events</p>
           </CardContent>
         </Card>
       </div>
@@ -119,12 +127,26 @@ export default async function OverviewPage() {
                 </div>
                 <Badge variant={health.status === "OK" ? "success" : "destructive"}>{health.status || "Unknown"}</Badge>
               </div>
-              <div className="flex items-center justify-between border-b pb-2">
+              <div className="flex items-center justify-between border-b border-border/50 pb-2">
                 <div className="flex items-center gap-2">
                   <Database className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">PostgreSQL</span>
                 </div>
                 <Badge variant={health.postgres === "OK" ? "success" : "destructive"}>{health.postgres || "Unknown"}</Badge>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                <div className="flex items-center gap-2">
+                  <Database className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Redis Cache</span>
+                </div>
+                <Badge variant={health.redis === "OK" ? "success" : "destructive"}>{health.redis || "Unknown"}</Badge>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/50 pb-2 border-0">
+                <div className="flex items-center gap-2">
+                  <ActivitySquare className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Kafka Event Bus</span>
+                </div>
+                <Badge variant={health.kafka === "OK" ? "success" : "destructive"}>{health.kafka || "Unknown"}</Badge>
               </div>
             </div>
           </CardContent>
