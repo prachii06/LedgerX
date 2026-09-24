@@ -23,9 +23,6 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-card px-4 py-6 text-card-foreground">
       <div className="flex items-center gap-2 px-2 pb-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-          LX
-        </div>
         <span className="text-xl font-bold tracking-tight">LedgerX</span>
       </div>
 
