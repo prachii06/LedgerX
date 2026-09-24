@@ -89,29 +89,63 @@ export default async function TransactionDetailPage({ params }: { params: Promis
           <div className="space-y-6 pl-4 border-l-2 ml-4 pb-4">
             {reconciliation?.expected_events.map((eventType, index) => {
               const matchedEvent = events.find(e => e.event_type === eventType)
+              
+              const isReceived = reconciliation.received_events?.includes(eventType)
+              const isMissing = reconciliation.missing_events?.includes(eventType)
+              const isDuplicate = reconciliation.duplicate_events?.includes(eventType)
+
+              let statusText = "Waiting..."
+              let colorClass = "text-muted-foreground border-muted"
+              let textClass = "text-muted-foreground"
+              let Icon = AlertCircle
+
+              if (isDuplicate) {
+                statusText = "Duplicate Event"
+                colorClass = "text-yellow-500 border-yellow-500"
+                textClass = "text-yellow-500"
+                Icon = AlertCircle
+              } else if (isMissing) {
+                statusText = "Missing Event"
+                colorClass = "text-destructive border-destructive"
+                textClass = "text-destructive"
+                Icon = XCircle
+              } else if (isReceived) {
+                statusText = "Received"
+                colorClass = "text-green-500 border-green-500"
+                textClass = "text-foreground"
+                Icon = CheckCircle2
+              }
+
               return (
                 <div key={eventType} className="relative">
-                  <div className={`absolute -left-[25px] top-1 rounded-full p-0.5 bg-background border ${matchedEvent ? 'text-green-500 border-green-500' : 'text-muted-foreground border-muted'}`}>
-                    {matchedEvent ? <CheckCircle2 className="h-5 w-5 bg-background rounded-full" /> : <AlertCircle className="h-5 w-5 bg-background rounded-full" />}
+                  <div className={`absolute -left-[25px] top-1 rounded-full p-0.5 bg-background border ${colorClass}`}>
+                    <Icon className="h-5 w-5 bg-background rounded-full" />
                   </div>
                   <div className="pl-6 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <h4 className={`font-semibold ${matchedEvent ? 'text-foreground' : 'text-muted-foreground'}`}>{eventType}</h4>
+                        <h4 className={`font-semibold ${isReceived || isDuplicate ? 'text-foreground' : 'text-muted-foreground'}`}>{eventType}</h4>
                         {matchedEvent && <Badge variant="outline" className="text-[10px]">Seq {matchedEvent.sequence}</Badge>}
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {matchedEvent ? formatDate(matchedEvent.received_at) : 'Waiting...'}
+                        {matchedEvent ? formatDate(matchedEvent.received_at) : (isReceived || isDuplicate ? 'Received' : (isMissing ? 'Missing' : 'Waiting...'))}
                       </span>
                     </div>
-                    {matchedEvent ? (
+                    {isReceived || isDuplicate ? (
                       <div className="text-sm text-muted-foreground">
-                        Source: {matchedEvent.source}
-                        {matchedEvent.payload?.amount && ` • Amount: ${matchedEvent.payload.amount}`}
+                        {matchedEvent ? (
+                          <>
+                            Source: {matchedEvent.source}
+                            {matchedEvent.payload?.amount && ` • Amount: ${matchedEvent.payload.amount}`}
+                          </>
+                        ) : (
+                          "Event processed"
+                        )}
+                        {isDuplicate && <span className={`ml-2 font-medium ${textClass}`}>Duplicate</span>}
                       </div>
                     ) : (
-                      <div className="text-sm text-destructive font-medium">
-                        Missing Event
+                      <div className={`text-sm font-medium ${textClass}`}>
+                        {statusText}
                       </div>
                     )}
                   </div>
