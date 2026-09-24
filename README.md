@@ -2,6 +2,8 @@
 
 **LedgerX** is a modern, high-performance, event-driven ledger and reconciliation engine. It simulates, processes, and reconciles high volumes of financial transactions in real-time. 
 
+**Live Dashboard**: [https://frontend-ten-gamma-80.vercel.app/overview](https://frontend-ten-gamma-80.vercel.app/overview)
+
 Designed with a scalable **Go** backend and a reactive **Next.js** frontend dashboard, LedgerX uses **Kafka** for asynchronous event processing, **Redis** for high-speed caching, and **WebSockets** for pushing live updates to the user interface.
 
 ---
