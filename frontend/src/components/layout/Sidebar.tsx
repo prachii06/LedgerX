@@ -103,15 +103,6 @@ export function Sidebar() {
             <span className="font-medium">Production</span>
           </div>
         </div>
-        <div className="flex items-center gap-3 px-3 py-3">
-          <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center font-semibold text-sm">
-            P
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Prachi</span>
-            <span className="text-xs text-muted-foreground">Ops Team</span>
-          </div>
-        </div>
       </div>
     </div>
   )

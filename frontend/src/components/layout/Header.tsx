@@ -31,12 +31,7 @@ export function Header() {
           />
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <button className="relative rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-destructive" />
-        </button>
-      </div>
+
     </header>
   )
 }
