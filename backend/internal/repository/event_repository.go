@@ -68,7 +68,7 @@ func (r *EventRepository) FindAll(
 			payload,
 			received_at
 		FROM transaction_events
-		WHERE ($1 = '' OR transaction_id = $1)
+		WHERE (CAST($1 AS text) = '' OR transaction_id = $1)
 		ORDER BY received_at DESC
 		LIMIT $2 OFFSET $3
 	`
