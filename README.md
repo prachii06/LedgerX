@@ -8,7 +8,7 @@ Designed with a scalable **Go** backend and a reactive **Next.js** frontend dash
 
 ## Key Features
 
-- **Real-Time Dashboard**: A beautiful Next.js UI using Tailwind CSS and shadcn/ui, featuring live metric counters, active transaction feeds, and system health status.
+- **Real-Time Dashboard**: A Next.js UI using Tailwind CSS and shadcn/ui, featuring live metric counters, active transaction feeds, and system health status.
 - **Event-Driven Architecture**: Uses Apache Kafka to decouple transaction ingestion from downstream event processing and reconciliation.
 - **Live WebSockets**: Pushes real-time transaction updates, reconciliation status changes, and system alerts directly to the frontend client without polling.
 - **Automated Reconciliation**: Continuously reconciles transaction records against the stored event history to flag mismatched, missing, or pending data.
