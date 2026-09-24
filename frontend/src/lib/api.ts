@@ -32,13 +32,18 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
 export async function fetchHealth(): Promise<SystemHealth> {
   try {
     const liveRes = await apiFetch("/live").catch(() => ({ status: "Unavailable" }));
-    const readyRes = await apiFetch("/ready").catch(() => ({ status: "Unavailable" }));
-    
+    const readyRes = await apiFetch("/ready").catch(() => ({ 
+      status: "Unavailable", 
+      services: { postgresql: "Unavailable", redis: "Unavailable", kafka: "Unavailable" } 
+    }));
+
+    const services = readyRes.services || {};
+
     return {
       status: liveRes.status === "alive" ? "OK" : "Unavailable",
-      postgres: readyRes.status === "ready" ? "OK" : "Unavailable",
-      redis: "Unavailable", // Not exposed by backend
-      kafka: "Unavailable", // Not exposed by backend
+      postgres: services.postgresql === "ok" ? "OK" : "Unavailable",
+      redis: services.redis === "ok" ? "OK" : "Unavailable",
+      kafka: services.kafka === "ok" ? "OK" : "Unavailable",
     };
   } catch (error) {
     return { status: "Unavailable", postgres: "Unavailable", redis: "Unavailable", kafka: "Unavailable" };

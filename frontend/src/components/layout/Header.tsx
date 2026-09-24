@@ -17,7 +17,7 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6 py-4">
+    <header className="flex h-16 items-center justify-between border-b bg-card px-6 py-4 sticky top-0 z-50">
       <div className="flex flex-1 items-center gap-4">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

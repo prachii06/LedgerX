@@ -10,7 +10,7 @@ import { SimulationButton } from "@/components/SimulationButton"
 export default async function OverviewPage() {
   const transactions = await fetchTransactions(10).catch(() => [])
   const health = await fetchHealth().catch(() => ({ status: "Unavailable", postgres: "Unavailable", redis: "Unavailable", kafka: "Unavailable" }))
-  
+
   const stats = await getOverview().catch(() => ({ total_transactions: 0, reconciled: 0, issues: 0, pending: 0 }))
 
   const total = stats.total_transactions
@@ -39,7 +39,7 @@ export default async function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{total}</div>
-            <p className="text-xs text-muted-foreground">Processed by LedgerX</p>
+            <p className="text-xs text-muted-foreground mt-1">Processed by LedgerX</p>
           </CardContent>
         </Card>
         <Card>
@@ -49,7 +49,7 @@ export default async function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-500">{matched}</div>
-            <p className="text-xs text-muted-foreground">Successfully matched events</p>
+            <p className="text-xs text-muted-foreground mt-1">Successfully matched events</p>
           </CardContent>
         </Card>
         <Card>
@@ -59,7 +59,7 @@ export default async function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{issues}</div>
-            <p className="text-xs text-muted-foreground">Require manual investigation</p>
+            <p className="text-xs text-muted-foreground mt-1">Require manual investigation</p>
           </CardContent>
         </Card>
         <Card>
@@ -69,7 +69,7 @@ export default async function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-500">{pending}</div>
-            <p className="text-xs text-muted-foreground">Awaiting events</p>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting events</p>
           </CardContent>
         </Card>
       </div>
@@ -119,12 +119,26 @@ export default async function OverviewPage() {
                 </div>
                 <Badge variant={health.status === "OK" ? "success" : "destructive"}>{health.status || "Unknown"}</Badge>
               </div>
-              <div className="flex items-center justify-between border-b pb-2">
+              <div className="flex items-center justify-between border-b border-border/50 pb-2">
                 <div className="flex items-center gap-2">
                   <Database className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">PostgreSQL</span>
                 </div>
                 <Badge variant={health.postgres === "OK" ? "success" : "destructive"}>{health.postgres || "Unknown"}</Badge>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                <div className="flex items-center gap-2">
+                  <Database className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Redis Cache</span>
+                </div>
+                <Badge variant={health.redis === "OK" ? "success" : "destructive"}>{health.redis || "Unknown"}</Badge>
+              </div>
+              <div className="flex items-center justify-between border-b border-border/50 pb-2 border-0">
+                <div className="flex items-center gap-2">
+                  <ActivitySquare className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Kafka Event Bus</span>
+                </div>
+                <Badge variant={health.kafka === "OK" ? "success" : "destructive"}>{health.kafka || "Unknown"}</Badge>
               </div>
             </div>
           </CardContent>

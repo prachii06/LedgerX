@@ -58,22 +58,43 @@ func (r *EventRepository) FindAll(
 	offset int,
 ) ([]models.Event, error) {
 
-	query := `
-		SELECT
-			id,
-			transaction_id,
-			source,
-			event_type,
-			sequence,
-			payload,
-			received_at
-		FROM transaction_events
-		WHERE (CAST($1 AS text) = '' OR transaction_id = $1)
-		ORDER BY received_at DESC
-		LIMIT $2 OFFSET $3
-	`
+	var query string
+	var args []interface{}
 
-	rows, err := r.db.Query(ctx, query, transactionID, limit, offset)
+	if transactionID == "" {
+		query = `
+			SELECT
+				id,
+				transaction_id,
+				source,
+				event_type,
+				sequence,
+				payload,
+				received_at
+			FROM transaction_events
+			ORDER BY received_at DESC
+			LIMIT $1 OFFSET $2
+		`
+		args = []interface{}{limit, offset}
+	} else {
+		query = `
+			SELECT
+				id,
+				transaction_id,
+				source,
+				event_type,
+				sequence,
+				payload,
+				received_at
+			FROM transaction_events
+			WHERE transaction_id = $1
+			ORDER BY received_at DESC
+			LIMIT $2 OFFSET $3
+		`
+		args = []interface{}{transactionID, limit, offset}
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

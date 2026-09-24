@@ -127,13 +127,14 @@ func Run() {
 		cfg.ServerPort,
 		cfg.CORSAllowedOrigins,
 		db,
+		redisClient,
+		cfg.KafkaBrokers,
 		transactionHandler,
 		simulationHandler,
 		reconciliationHandler,
 		eventHandler,
 		dashboardHandler,
 	)
-
 
 	// Start HTTP Server
 	log.Info(
