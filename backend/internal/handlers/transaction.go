@@ -5,6 +5,7 @@ import (
 	"github.com/prachii06/LedgerX/internal/models"
 	"github.com/prachii06/LedgerX/internal/services"
 	"net/http"
+	"strconv"
 )
 
 type TransactionHandler struct {
@@ -35,4 +36,41 @@ func (h *TransactionHandler) Create(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, transaction)
+}
+
+func (h *TransactionHandler) List(c *gin.Context) {
+	limitStr := c.DefaultQuery("limit", "50")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		limit = 50
+	}
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		offset = 0
+	}
+
+	transactions, err := h.service.GetTransactions(c.Request.Context(), limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if transactions == nil {
+		transactions = []models.Transaction{}
+	}
+
+	c.JSON(http.StatusOK, transactions)
+}
+
+func (h *TransactionHandler) Get(c *gin.Context) {
+	id := c.Param("id")
+	transaction, err := h.service.GetTransaction(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, transaction)
 }

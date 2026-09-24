@@ -49,3 +49,22 @@ func (s *TransactionService) CreateTransaction(
 
 	return s.repo.Create(ctx, transaction)
 }
+
+func (s *TransactionService) GetTransactions(
+	ctx context.Context,
+	limit int,
+	offset int,
+) ([]models.Transaction, error) {
+	return s.repo.FindAll(ctx, limit, offset)
+}
+
+func (s *TransactionService) GetTransaction(
+	ctx context.Context,
+	id string,
+) (*models.Transaction, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
+func (s *TransactionService) GetOverview(ctx context.Context) (int, int, int, int, error) {
+	return s.repo.GetOverview(ctx)
+}
