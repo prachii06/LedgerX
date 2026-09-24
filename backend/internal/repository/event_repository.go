@@ -50,3 +50,56 @@ func (r *EventRepository) Create(
 
 	return err
 }
+
+func (r *EventRepository) FindAll(
+	ctx context.Context,
+	transactionID string,
+	limit int,
+	offset int,
+) ([]models.Event, error) {
+
+	query := `
+		SELECT
+			id,
+			transaction_id,
+			source,
+			event_type,
+			sequence,
+			payload,
+			received_at
+		FROM transaction_events
+		WHERE ($1 = '' OR transaction_id = $1)
+		ORDER BY received_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.Query(ctx, query, transactionID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		var event models.Event
+		err := rows.Scan(
+			&event.ID,
+			&event.TransactionID,
+			&event.Source,
+			&event.EventType,
+			&event.Sequence,
+			&event.Payload,
+			&event.ReceivedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}

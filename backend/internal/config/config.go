@@ -19,6 +19,8 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+	
+	CORSAllowedOrigins string
 }
 
 func Load() (*Config, error) {
@@ -36,6 +38,8 @@ func Load() (*Config, error) {
 		DBUser:     os.Getenv("DB_USER"),
 		DBPassword: os.Getenv("DB_PASSWORD"),
 		DBName:     os.Getenv("DB_NAME"),
+
+		CORSAllowedOrigins: os.Getenv("CORS_ALLOWED_ORIGINS"),
 	}
 
 	return cfg, nil

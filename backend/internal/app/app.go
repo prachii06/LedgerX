@@ -119,15 +119,21 @@ func Run() {
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 	simulationHandler := handlers.NewSimulationHandler(simulationService)
 	reconciliationHandler := handlers.NewReconciliationHandler(reconciliationService)
+	eventHandler := handlers.NewEventHandler(eventService)
+	dashboardHandler := handlers.NewDashboardHandler(transactionService)
 
 	// Server
 	router := server.New(
 		cfg.ServerPort,
+		cfg.CORSAllowedOrigins,
 		db,
 		transactionHandler,
 		simulationHandler,
 		reconciliationHandler,
+		eventHandler,
+		dashboardHandler,
 	)
+
 
 	// Start HTTP Server
 	log.Info(

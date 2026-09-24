@@ -24,3 +24,12 @@ func (s *EventService) CreateEvent(
 ) error {
 	return s.repository.Create(ctx, event)
 }
+
+func (s *EventService) GetEvents(
+	ctx context.Context,
+	transactionID string,
+	limit int,
+	offset int,
+) ([]models.Event, error) {
+	return s.repository.FindAll(ctx, transactionID, limit, offset)
+}
