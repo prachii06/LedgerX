@@ -10,7 +10,7 @@ import { SimulationButton } from "@/components/SimulationButton"
 export default async function OverviewPage() {
   const transactions = await fetchTransactions(10).catch(() => [])
   const health = await fetchHealth().catch(() => ({ status: "Unavailable", postgres: "Unavailable", redis: "Unavailable", kafka: "Unavailable" }))
-  
+
   const stats = await getOverview().catch(() => ({ total_transactions: 0, reconciled: 0, issues: 0, pending: 0 }))
 
   const total = stats.total_transactions

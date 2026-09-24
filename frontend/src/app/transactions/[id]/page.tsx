@@ -89,7 +89,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
           <div className="space-y-6 pl-4 border-l-2 ml-4 pb-4">
             {reconciliation?.expected_events.map((eventType, index) => {
               const matchedEvent = events.find(e => e.event_type === eventType)
-              
+
               const isReceived = reconciliation.received_events?.includes(eventType)
               const isMissing = reconciliation.missing_events?.includes(eventType)
               const isDuplicate = reconciliation.duplicate_events?.includes(eventType)
@@ -182,7 +182,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
             </dl>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Reconciliation History</CardTitle>

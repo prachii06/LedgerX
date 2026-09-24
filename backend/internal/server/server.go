@@ -6,10 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prachii06/LedgerX/internal/handlers"
+	"github.com/prachii06/LedgerX/internal/redis"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, transactionHandler *handlers.TransactionHandler, simulationHandler *handlers.SimulationHandler, reconciliationHandler *handlers.ReconciliationHandler, eventHandler *handlers.EventHandler, dashboardHandler *handlers.DashboardHandler) *gin.Engine {
+func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, redisClient *redis.Client, kafkaBrokers string, transactionHandler *handlers.TransactionHandler, simulationHandler *handlers.SimulationHandler, reconciliationHandler *handlers.ReconciliationHandler, eventHandler *handlers.EventHandler, dashboardHandler *handlers.DashboardHandler) *gin.Engine {
 	router := gin.Default()
 
 	// Add Prometheus HTTP middleware
@@ -22,7 +23,7 @@ func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, transactionHa
 		if corsAllowedOrigins != "" {
 			allowedOrigin = corsAllowedOrigins
 		}
-		
+
 		// Always allow localhost in development, or match the exact origin if specified
 		if origin == "http://localhost:3000" || origin == allowedOrigin {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
@@ -42,14 +43,14 @@ func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, transactionHa
 		}
 		c.Next()
 	}
-	
+
 	router.Use(corsMiddleware)
-	
+
 	// Ensure OPTIONS requests don't instantly 404/405 before hitting the middleware
 	router.NoRoute(corsMiddleware)
 	router.NoMethod(corsMiddleware)
 
-	healthHandler := handlers.NewHealthHandler(db)
+	healthHandler := handlers.NewHealthHandler(db, redisClient, kafkaBrokers)
 
 	router.GET("/health", healthHandler.Health)
 	router.GET("/ready", healthHandler.Ready)

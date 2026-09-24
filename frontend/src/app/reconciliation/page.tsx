@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export default async function ReconciliationPage() {
   // Fetch transactions and filter to those that have been reconciled or are in issue states
   const allTransactions = await fetchTransactions(200).catch(() => [])
-  
+
   // For the reconciliation queue, we focus on anomalies and matches.
   // PENDING/PROCESSING might not have been checked yet if expected time hasn't passed,
   // but let's show all with their statuses.
