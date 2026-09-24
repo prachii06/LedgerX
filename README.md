@@ -217,19 +217,63 @@ graph LR
 
 ---
 
-## API Reference
+## 🔌 API Reference
 
 ### REST Endpoints
-- `GET /health` — Combined system health check (DB, Redis, Kafka).
-- `GET /live` — Basic liveness probe.
-- `GET /ready` — Readiness probe indicating if backing services are connected.
-- `GET /overview` — Fetches aggregate dashboard metrics (totals, reconciled, pending).
-- `POST /transactions` — Creates a new transaction.
-- `GET /transactions` — Lists paginated transactions.
-- `POST /simulate` — Triggers a bulk synthetic transaction generation routine.
-- `GET /events` — Lists Kafka events.
-- `GET /reconcile/:transaction_id` — Triggers manual reconciliation.
+
+#### 1. Transactions
+- **`GET /transactions`**
+  - **Description**: Fetches a paginated list of transactions.
+  - **Query Params**: `limit` (default: 50), `offset` (default: 0)
+  - **Response**: Array of `Transaction` objects `[{ id, external_id, amount, currency, status, created_at, updated_at }]`.
+
+- **`GET /transactions/:id`**
+  - **Description**: Fetches a single transaction by its internal ID.
+  - **Response**: A `Transaction` object.
+
+- **`POST /transactions`**
+  - **Description**: Submits a new transaction into the ledger.
+  - **Body**: `{"external_id": "string", "amount": float, "currency": "string"}`
+  - **Response**: `201 Created` with the newly created `Transaction` object.
+
+#### 2. Simulation & Dashboard
+- **`GET /overview`**
+  - **Description**: Fetches the aggregate metrics for the dashboard.
+  - **Response**: `{"total_transactions": int, "reconciled": int, "issues": int, "pending": int}`
+
+- **`POST /simulate`**
+  - **Description**: Generates a batch of synthetic transactions and domain events (orders, payments, accounting).
+  - **Body**: `{"count": int}` (max 1000)
+  - **Response**: `{"message": "Simulation completed", "count": int, "transaction_ids": ["uuid", ...]}`
+
+#### 3. Events & Reconciliation
+- **`GET /events`**
+  - **Description**: Fetches a paginated list of raw Kafka events processed by the system.
+  - **Query Params**: `limit` (default: 50), `offset` (default: 0), `transaction_id` (optional)
+  - **Response**: Array of `Event` objects.
+
+- **`GET /reconcile/:transaction_id`**
+  - **Description**: Fetches the latest reconciliation result for a specific transaction (served directly from Redis cache).
+  - **Response**: A `ReconciliationResult` object.
+
+- **`GET /reconcile/:transaction_id/history`**
+  - **Description**: Fetches the entire historical log of reconciliation attempts for a transaction.
+  - **Response**: Array of `ReconciliationRecord` objects.
+
+#### 4. Health & Observability
+- **`GET /health`**
+  - **Description**: Deep health check validating connectivity to PostgreSQL, Redis, and Kafka.
+  - **Response**: `{"status": "ok", "postgres": "ok", "redis": "ok", "kafka": "ok"}`
+
+- **`GET /ready` & `GET /live`**
+  - **Description**: Kubernetes-compatible readiness and liveness probes.
+
+- **`GET /metrics`**
+  - **Description**: Prometheus scraper endpoint exposing Go runtime metrics and custom application telemetry (e.g., `ledgerx_reconciliations_total`).
 
 ### WebSocket Endpoint
-- `GET /ws` — Upgrade connection to a WebSocket for live dashboard updates.
+- **`GET /ws`**
+  - **Description**: Upgrades the connection to a WebSocket for pushing live dashboard updates.
+  - **Event Payloads**: Pushes JSON payloads formatted as `{"type": string, "transaction_id": string, "status": string, "timestamp": string, "details": object}`
+  - **Event Types**: `TRANSACTION_CREATED`, `EVENT_PERSISTED`, `RECONCILIATION_COMPLETED`.
 
