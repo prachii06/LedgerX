@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertCircle, CheckCircle2, ChevronRight, Copy, RefreshCcw, XCircle } from "lucide-react"
 
-export default async function TransactionDetailPage({ params }: { params: { id: string } }) {
-  const transactionId = params.id
+export default async function TransactionDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const resolvedParams = await params
+  const transactionId = resolvedParams.id
 
   const [transaction, events, reconciliation, history] = await Promise.all([
     fetchTransaction(transactionId).catch(() => null),
