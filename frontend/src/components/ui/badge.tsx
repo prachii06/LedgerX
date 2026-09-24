@@ -11,12 +11,12 @@ function Badge({ className, variant = "default", ...props }: BadgeProps) {
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         {
-          "border-border bg-muted/10 text-foreground hover:bg-muted/20": variant === "default",
-          "border-muted bg-secondary/20 text-muted-foreground hover:bg-secondary/40": variant === "secondary",
-          "border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20": variant === "destructive",
-          "border-green-500/30 bg-green-500/10 text-green-500 hover:bg-green-500/20": variant === "success",
-          "border-yellow-500/30 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20": variant === "warning",
-          "border-blue-500/30 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20": variant === "pending",
+          "border-transparent bg-primary/20 text-primary hover:bg-primary/30": variant === "default",
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80": variant === "secondary",
+          "border-transparent bg-red-500/20 text-red-400 hover:bg-red-500/30": variant === "destructive",
+          "border-transparent bg-green-500/20 text-green-400 hover:bg-green-500/30": variant === "success",
+          "border-transparent bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30": variant === "warning",
+          "border-transparent bg-blue-500/20 text-blue-400 hover:bg-blue-500/30": variant === "pending",
           "text-foreground border-border": variant === "outline",
         },
         className
