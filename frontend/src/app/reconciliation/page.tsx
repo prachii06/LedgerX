@@ -29,28 +29,28 @@ export default async function ReconciliationPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="hover:-translate-y-1 transition-transform duration-300">
+        <Card className="bg-success/10 border-success/20">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">MATCHED</CardTitle>
-            <div className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">{matched}</div>
+            <div className="text-2xl font-bold text-green-500">{matched}</div>
           </CardHeader>
         </Card>
-        <Card className="hover:-translate-y-1 transition-transform duration-300">
+        <Card className="bg-warning/10 border-warning/20">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">MISSING</CardTitle>
-            <div className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">{missing}</div>
+            <div className="text-2xl font-bold text-yellow-500">{missing}</div>
           </CardHeader>
         </Card>
-        <Card className="hover:-translate-y-1 transition-transform duration-300">
+        <Card className="bg-destructive/10 border-destructive/20">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">MISMATCH</CardTitle>
-            <div className="text-3xl font-bold bg-gradient-to-r from-rose-400 to-red-500 bg-clip-text text-transparent">{mismatch}</div>
+            <div className="text-2xl font-bold text-destructive">{mismatch}</div>
           </CardHeader>
         </Card>
-        <Card className="hover:-translate-y-1 transition-transform duration-300">
+        <Card className="bg-secondary/30">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">PENDING</CardTitle>
-            <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">{pending}</div>
+            <div className="text-2xl font-bold text-blue-500">{pending}</div>
           </CardHeader>
         </Card>
       </div>
