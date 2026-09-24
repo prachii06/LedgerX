@@ -1,3 +1,5 @@
+"use client";
+
 import { fetchHealth, fetchTransactions, getOverview } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -6,17 +8,35 @@ import { formatCurrency, formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { ActivitySquare, Database, ListOrdered, Server, ShieldAlert, FileWarning, RefreshCcw } from "lucide-react"
 import { SimulationButton } from "@/components/SimulationButton"
+import useSWR from "swr"
 
-export default async function OverviewPage() {
-  const transactions = await fetchTransactions(10).catch(() => [])
-  const health = await fetchHealth().catch(() => ({ status: "Unavailable", postgres: "Unavailable", redis: "Unavailable", kafka: "Unavailable" }))
+export default function OverviewPage() {
+  const { data: transactionsData } = useSWR(
+    'overview-transactions',
+    () => fetchTransactions(10).catch(() => []),
+    { revalidateOnFocus: false }
+  )
+  
+  const { data: healthData } = useSWR(
+    'overview-health',
+    () => fetchHealth().catch(() => ({ status: "Unavailable", postgres: "Unavailable", redis: "Unavailable", kafka: "Unavailable" })),
+    { revalidateOnFocus: false }
+  )
+  
+  const { data: statsData } = useSWR(
+    'overview-stats',
+    () => getOverview().catch(() => ({ total_transactions: 0, reconciled: 0, issues: 0, pending: 0 })),
+    { revalidateOnFocus: false }
+  )
 
-  const stats = await getOverview().catch(() => ({ total_transactions: 0, reconciled: 0, issues: 0, pending: 0 }))
+  const transactions = transactionsData || []
+  const health = healthData || { status: "Unknown", postgres: "Unknown", redis: "Unknown", kafka: "Unknown" }
+  const stats = statsData || { total_transactions: 0, reconciled: 0, issues: 0, pending: 0 }
 
-  const total = stats.total_transactions
-  const matched = stats.reconciled
-  const issues = stats.issues
-  const pending = stats.pending
+  const total = stats.total_transactions || 0
+  const matched = stats.reconciled || 0
+  const issues = stats.issues || 0
+  const pending = stats.pending || 0
 
   return (
     <div className="space-y-6">

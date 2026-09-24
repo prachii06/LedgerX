@@ -32,9 +32,9 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
 export async function fetchHealth(): Promise<SystemHealth> {
   try {
     const liveRes = await apiFetch("/live").catch(() => ({ status: "Unavailable" }));
-    const readyRes = await apiFetch("/ready").catch(() => ({ 
-      status: "Unavailable", 
-      services: { postgresql: "Unavailable", redis: "Unavailable", kafka: "Unavailable" } 
+    const readyRes = await apiFetch("/ready").catch(() => ({
+      status: "Unavailable",
+      services: { postgresql: "Unavailable", redis: "Unavailable", kafka: "Unavailable" }
     }));
 
     const services = readyRes.services || {};

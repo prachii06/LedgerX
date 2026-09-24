@@ -10,13 +10,19 @@ import (
 	"github.com/prachii06/LedgerX/internal/repository"
 )
 
-type TransactionService struct {
-	repo *repository.TransactionRepository
+type EventBroadcaster interface {
+	BroadcastMessage(msgType string, transactionID string, status string, details interface{})
 }
 
-func NewTransactionService(repo *repository.TransactionRepository) *TransactionService {
+type TransactionService struct {
+	repo        *repository.TransactionRepository
+	broadcaster EventBroadcaster
+}
+
+func NewTransactionService(repo *repository.TransactionRepository, broadcaster EventBroadcaster) *TransactionService {
 	return &TransactionService{
-		repo: repo,
+		repo:        repo,
+		broadcaster: broadcaster,
 	}
 }
 
@@ -48,7 +54,11 @@ func (s *TransactionService) CreateTransaction(
 	transaction.CreatedAt = time.Now()
 	transaction.UpdatedAt = time.Now()
 
-	return s.repo.Create(ctx, transaction)
+	err = s.repo.Create(ctx, transaction)
+	if err == nil && s.broadcaster != nil {
+		s.broadcaster.BroadcastMessage("TRANSACTION_CREATED", transaction.ID, transaction.Status, transaction)
+	}
+	return err
 }
 
 func (s *TransactionService) GetTransactions(

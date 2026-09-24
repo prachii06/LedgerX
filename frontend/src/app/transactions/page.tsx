@@ -1,12 +1,20 @@
+"use client";
+
 import { fetchTransactions } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import useSWR from "swr"
 
-export default async function TransactionsPage() {
-  const transactions = await fetchTransactions(200).catch(() => [])
+export default function TransactionsPage() {
+  const { data: transactionsData } = useSWR(
+    'transactions-list',
+    () => fetchTransactions(200).catch(() => []),
+    { revalidateOnFocus: false }
+  )
+  const transactions = transactionsData || [];
 
   return (
     <div className="space-y-6">

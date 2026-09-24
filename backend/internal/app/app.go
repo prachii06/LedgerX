@@ -16,6 +16,7 @@ import (
 	"github.com/prachii06/LedgerX/internal/repository"
 	"github.com/prachii06/LedgerX/internal/server"
 	"github.com/prachii06/LedgerX/internal/services"
+	"github.com/prachii06/LedgerX/internal/websocket"
 	"github.com/prachii06/LedgerX/internal/worker"
 )
 
@@ -62,6 +63,10 @@ func Run() {
 	// Dependency Injection
 	// ----------------------------
 
+	// WebSocket Hub
+	wsHub := websocket.NewHub()
+	go wsHub.Run()
+
 	// Repositories
 	transactionRepo := repository.NewTransactionRepository(db)
 	reconciliationRepo := repository.NewReconciliationRepository(db)
@@ -72,13 +77,14 @@ func Run() {
 	reconciliationCache := cache.NewReconciliationCache(redisClient.Client, 10*time.Minute)
 
 	// Services
-	transactionService := services.NewTransactionService(transactionRepo)
+	transactionService := services.NewTransactionService(transactionRepo, wsHub)
 	reconciliationService := services.NewReconciliationService(
 		reconciliationRepo,
 		reconciliationResultRepo,
 		reconciliationCache,
+		wsHub,
 	)
-	eventService := services.NewEventService(eventRepo)
+	eventService := services.NewEventService(eventRepo, wsHub)
 
 	// Kafka
 	kafkaProducer := kafka.NewProducer(cfg.KafkaBrokers)
@@ -134,6 +140,7 @@ func Run() {
 		reconciliationHandler,
 		eventHandler,
 		dashboardHandler,
+		wsHub,
 	)
 
 	// Start HTTP Server

@@ -7,10 +7,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prachii06/LedgerX/internal/handlers"
 	"github.com/prachii06/LedgerX/internal/redis"
+	"github.com/prachii06/LedgerX/internal/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, redisClient *redis.Client, kafkaBrokers string, transactionHandler *handlers.TransactionHandler, simulationHandler *handlers.SimulationHandler, reconciliationHandler *handlers.ReconciliationHandler, eventHandler *handlers.EventHandler, dashboardHandler *handlers.DashboardHandler) *gin.Engine {
+func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, redisClient *redis.Client, kafkaBrokers string, transactionHandler *handlers.TransactionHandler, simulationHandler *handlers.SimulationHandler, reconciliationHandler *handlers.ReconciliationHandler, eventHandler *handlers.EventHandler, dashboardHandler *handlers.DashboardHandler, hub *websocket.Hub) *gin.Engine {
 	router := gin.Default()
 
 	// Add Prometheus HTTP middleware
@@ -64,6 +65,11 @@ func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, redisClient *
 	router.GET("/reconcile/:transaction_id", reconciliationHandler.Reconcile)
 	router.GET("/reconcile/:transaction_id/history", reconciliationHandler.GetHistory)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// Register WebSocket endpoint
+	router.GET("/ws", func(c *gin.Context) {
+		hub.ServeWs(c)
+	})
 
 	fmt.Printf("server running on port %s\n", port)
 

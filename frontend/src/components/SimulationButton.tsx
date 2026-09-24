@@ -28,7 +28,6 @@ export function SimulationButton() {
     setLoading(true)
     try {
       await runSimulation(simCount)
-      router.refresh()
       setExpanded(false)
     } catch (e) {
       console.error(e)

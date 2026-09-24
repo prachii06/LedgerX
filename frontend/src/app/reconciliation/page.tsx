@@ -1,18 +1,20 @@
+"use client";
+
 import { fetchTransactions } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import useSWR from "swr"
 
-export default async function ReconciliationPage() {
-  // Fetch transactions and filter to those that have been reconciled or are in issue states
-  const allTransactions = await fetchTransactions(200).catch(() => [])
-
-  // For the reconciliation queue, we focus on anomalies and matches.
-  // PENDING/PROCESSING might not have been checked yet if expected time hasn't passed,
-  // but let's show all with their statuses.
-  const transactions = allTransactions
+export default function ReconciliationPage() {
+  const { data: transactionsData } = useSWR(
+    'transactions-recon',
+    () => fetchTransactions(200).catch(() => []),
+    { revalidateOnFocus: false }
+  )
+  const transactions = transactionsData || [];
 
   const matched = transactions.filter(t => t.status === "MATCHED").length
   const missing = transactions.filter(t => t.status === "MISSING").length
