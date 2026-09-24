@@ -4,7 +4,10 @@ import { useEffect, useRef } from "react";
 import { useSWRConfig } from "swr";
 // import { toast } from "sonner"; // If they have sonner, else console.log
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || (process.env.NODE_ENV === "production" ? "" : "ws://localhost:8080/ws");
+const configuredWsUrl = process.env.NEXT_PUBLIC_WS_URL;
+const WS_URL = (configuredWsUrl && configuredWsUrl.trim() !== "")
+  ? configuredWsUrl.trim()
+  : (process.env.NODE_ENV === "production" ? "MISSING_WS_URL" : "ws://localhost:8080/ws");
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { mutate } = useSWRConfig();
@@ -14,6 +17,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     let reconnectTimeout: NodeJS.Timeout;
 
     const connect = () => {
+      if (WS_URL === "MISSING_WS_URL") {
+        console.error("NEXT_PUBLIC_WS_URL is missing. Please configure it in Vercel to point to the Go backend WebSocket.");
+        return;
+      }
       const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
 

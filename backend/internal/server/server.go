@@ -60,7 +60,7 @@ func New(port string, corsAllowedOrigins string, db *pgxpool.Pool, redisClient *
 	router.POST("/transactions", transactionHandler.Create)
 	router.GET("/transactions/:id", transactionHandler.Get)
 	router.GET("/events", eventHandler.List)
-	router.GET("/dashboard/overview", dashboardHandler.Overview)
+	router.GET("/overview", dashboardHandler.Overview)
 	router.POST("/simulate", simulationHandler.Generate)
 	router.GET("/reconcile/:transaction_id", reconciliationHandler.Reconcile)
 	router.GET("/reconcile/:transaction_id/history", reconciliationHandler.GetHistory)

@@ -1,8 +1,15 @@
 import { Transaction, Event, ReconciliationResult, ReconciliationRecord, SystemHealth } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === "production" ? "" : "http://localhost:8080");
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = (configuredApiUrl && configuredApiUrl.trim() !== "") 
+  ? configuredApiUrl.trim() 
+  : (process.env.NODE_ENV === "production" ? "MISSING_BACKEND_URL" : "http://localhost:8080");
 
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
+  if (API_BASE_URL === "MISSING_BACKEND_URL") {
+    console.error("NEXT_PUBLIC_API_BASE_URL is missing or empty. Please configure it in Vercel.");
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is missing. Please configure it in Vercel to point to the Go backend.");
+  }
   try {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
@@ -51,7 +58,7 @@ export async function fetchHealth(): Promise<SystemHealth> {
 }
 
 export async function getOverview(): Promise<{ total_transactions: number, reconciled: number, issues: number, pending: number }> {
-  return apiFetch("/dashboard/overview");
+  return apiFetch("/overview");
 }
 
 export async function fetchTransactions(limit = 50, offset = 0): Promise<Transaction[]> {
