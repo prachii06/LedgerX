@@ -219,7 +219,15 @@ graph LR
 
 ---
 
-## 🔌 API Reference
+## Load Testing
+
+Load testing was performed to benchmark the system's ability to handle high-volume transaction bursts. The results demonstrate LedgerX's high throughput capabilities, efficiently processing and reconciling events via Kafka and WebSockets with minimal latency.
+
+For detailed load testing configurations, metrics, and comprehensive reports, please refer to the documentation provided in the [`docs/`](./docs/) directory.
+
+---
+
+## API Reference
 
 ### REST Endpoints
 
