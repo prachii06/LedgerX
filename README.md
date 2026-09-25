@@ -142,15 +142,15 @@ LedgerX/
 
 ---
 
-## Getting Started (Local Development)
+## Getting Started
 
 ### 1. Prerequisites
 - Docker and Docker Compose
-- Node.js 18+ and npm
+- Node.js 18+ and npm (Optional, if running frontend locally)
 - Go 1.25+ (Optional, if running backend natively outside Docker)
 
-### 2. Start the Backend Infrastructure
-Navigate to the `deploy` directory and start all services (PostgreSQL, Kafka, Redis, Prometheus, Grafana, and the Go Backend):
+### 2. Start the Backend Infrastructure (Docker)
+The backend stack, including PostgreSQL, Kafka, Redis, Prometheus, Grafana, and the Go API, is fully containerized. Navigate to the `deploy` directory and start all services:
 ```bash
 cd deploy
 docker-compose up -d --build
@@ -158,14 +158,11 @@ docker-compose up -d --build
 *The backend API will be available at `http://localhost:8080`.*
 *Grafana will be available at `http://localhost:3001`.*
 
-### 3. Start the Frontend
-In a new terminal, navigate to the `frontend` directory:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-*The Next.js dashboard will be available at `http://localhost:3000`.*
+### 3. Access the Frontend
+The Next.js dashboard is hosted on Vercel and already connected to the backend setup via Cloudflare Tunnels (if configured). 
+**Live Dashboard**: [https://frontend-ten-gamma-80.vercel.app/overview](https://frontend-ten-gamma-80.vercel.app/overview)
+
+*(Note: To run the frontend locally for development, navigate to the `frontend` directory, run `npm install`, and `npm run dev` to access it at `http://localhost:3000`.)*
 
 ---
 
